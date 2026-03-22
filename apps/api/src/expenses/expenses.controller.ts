@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Headers, UseGuards, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Headers, BadRequestException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiHeader } from '@nestjs/swagger';
 import {
   CreateExpenseDto,
@@ -6,12 +6,10 @@ import {
   ExpenseResponseDto,
 } from '@share-money/shared';
 import { CurrentUser, CurrentUserData } from '../auth/decorators/current-user.decorator';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ExpensesService } from './expenses.service';
 
 @ApiTags('expenses')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
 @Controller('trips/:tripId/expenses')
 export class ExpensesController {
   constructor(private readonly expensesService: ExpensesService) {}

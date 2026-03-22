@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { CreateTripDto, UpdateTripDto, generateTripId, generateTimestamp } from '@share-money/shared';
+import { CreateTripDto, UpdateTripDto, Trip, generateTripId, generateTimestamp } from '@share-money/shared';
 import { TripsRepository } from '../database/repositories/trips.repository';
 
 @Injectable()
@@ -23,6 +23,24 @@ export class TripsService {
   }
 
   async findOne(tripId: string, userId: string) {
+    return this.getActiveOwnedTrip(tripId, userId);
+  }
+
+  async update(tripId: string, userId: string, updateTripDto: UpdateTripDto) {
+    await this.getActiveOwnedTrip(tripId, userId);
+    return this.tripsRepository.update(tripId, updateTripDto);
+  }
+
+  async remove(tripId: string, userId: string) {
+    await this.getActiveOwnedTrip(tripId, userId);
+    await this.tripsRepository.softDelete(tripId);
+  }
+
+  async verifyOwnership(tripId: string, userId: string): Promise<void> {
+    await this.getActiveOwnedTrip(tripId, userId);
+  }
+
+  private async getActiveOwnedTrip(tripId: string, userId: string): Promise<Trip> {
     const trip = await this.tripsRepository.findById(tripId);
 
     if (!trip || !trip.isActive || trip.userId !== userId) {
@@ -30,44 +48,5 @@ export class TripsService {
     }
 
     return trip;
-  }
-
-  async update(tripId: string, userId: string, updateTripDto: UpdateTripDto) {
-    const trip = await this.tripsRepository.findById(tripId);
-
-    if (!trip || !trip.isActive) {
-      throw new NotFoundException(`Trip with ID ${tripId} not found`);
-    }
-
-    if (trip.userId !== userId) {
-      throw new NotFoundException(`Trip with ID ${tripId} not found`);
-    }
-
-    return this.tripsRepository.update(tripId, updateTripDto);
-  }
-
-  async remove(tripId: string, userId: string) {
-    const trip = await this.tripsRepository.findById(tripId);
-
-    if (!trip || !trip.isActive) {
-      throw new NotFoundException(`Trip with ID ${tripId} not found`);
-    }
-
-    if (trip.userId !== userId) {
-      throw new NotFoundException(`Trip with ID ${tripId} not found`);
-    }
-
-    await this.tripsRepository.softDelete(tripId);
-  }
-
-  /**
-   * Check if user owns trip (helper for other modules)
-   */
-  async verifyOwnership(tripId: string, userId: string): Promise<void> {
-    const trip = await this.tripsRepository.findById(tripId);
-
-    if (!trip || !trip.isActive || trip.userId !== userId) {
-      throw new NotFoundException(`Trip with ID ${tripId} not found`);
-    }
   }
 }

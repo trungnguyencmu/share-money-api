@@ -11,6 +11,8 @@
     "target": "es2022",
     "module": "esnext",
     "lib": ["es2022"],
+    "strict": true,
+    "strictPropertyInitialization": false,
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "baseUrl": ".",

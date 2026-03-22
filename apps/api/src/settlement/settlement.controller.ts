@@ -1,13 +1,11 @@
-import { Controller, Get, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { SettlementResponseDto } from '@share-money/shared';
 import { CurrentUser, CurrentUserData } from '../auth/decorators/current-user.decorator';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { SettlementService } from './settlement.service';
 
 @ApiTags('settlement')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
 @Controller('trips/:tripId/settlement')
 export class SettlementController {
   constructor(private readonly settlementService: SettlementService) {}

@@ -10,8 +10,10 @@ import {
   PutCommandInput,
   QueryCommand,
   QueryCommandInput,
+  QueryCommandOutput,
   ScanCommand,
   ScanCommandInput,
+  ScanCommandOutput,
   UpdateCommand,
   UpdateCommandInput,
 } from '@aws-sdk/lib-dynamodb';
@@ -116,15 +118,13 @@ export class DynamoDBService {
   async query(params: QueryCommandInput) {
     try {
       const allItems: Record<string, any>[] = [];
-      let lastEvaluatedKey = undefined;
+      let lastEvaluatedKey: Record<string, any> | undefined = undefined;
       let pages = 0;
 
       do {
-        const command = new QueryCommand({
-          ...params,
-          ExclusiveStartKey: lastEvaluatedKey,
-        });
-        const result = await this.client.send(command);
+        const result: QueryCommandOutput = await this.client.send(
+          new QueryCommand({ ...params, ExclusiveStartKey: lastEvaluatedKey })
+        );
         allItems.push(...(result.Items || []));
         lastEvaluatedKey = result.LastEvaluatedKey;
         pages++;
@@ -150,15 +150,13 @@ export class DynamoDBService {
   async scan(params: ScanCommandInput) {
     try {
       const allItems: Record<string, any>[] = [];
-      let lastEvaluatedKey = undefined;
+      let lastEvaluatedKey: Record<string, any> | undefined = undefined;
       let pages = 0;
 
       do {
-        const command = new ScanCommand({
-          ...params,
-          ExclusiveStartKey: lastEvaluatedKey,
-        });
-        const result = await this.client.send(command);
+        const result: ScanCommandOutput = await this.client.send(
+          new ScanCommand({ ...params, ExclusiveStartKey: lastEvaluatedKey })
+        );
         allItems.push(...(result.Items || []));
         lastEvaluatedKey = result.LastEvaluatedKey;
         pages++;

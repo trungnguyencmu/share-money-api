@@ -1,13 +1,11 @@
-import { Controller, Get, Post, Body, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AddParticipantDto, ParticipantResponseDto } from '@share-money/shared';
 import { CurrentUser, CurrentUserData } from '../auth/decorators/current-user.decorator';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ParticipantsService } from './participants.service';
 
 @ApiTags('participants')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
 @Controller('trips/:tripId/participants')
 export class ParticipantsController {
   constructor(private readonly participantsService: ParticipantsService) {}
