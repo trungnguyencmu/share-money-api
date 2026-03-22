@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBoolean, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class CreateTripDto {
   @ApiProperty({
@@ -23,14 +23,6 @@ export class UpdateTripDto {
   @IsOptional()
   @MaxLength(100)
   tripName?: string;
-
-  @ApiPropertyOptional({
-    description: 'Whether the trip is active',
-    example: true,
-  })
-  @IsBoolean()
-  @IsOptional()
-  isActive?: boolean;
 }
 
 export class TripResponseDto {

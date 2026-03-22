@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateTripDto, UpdateTripDto, generateTripId, generateTimestamp } from '@share-money/shared';
 import { TripsRepository } from '../database/repositories/trips.repository';
 
@@ -25,15 +25,7 @@ export class TripsService {
   async findOne(tripId: string, userId: string) {
     const trip = await this.tripsRepository.findById(tripId);
 
-    if (!trip) {
-      throw new NotFoundException(`Trip with ID ${tripId} not found`);
-    }
-
-    if (trip.userId !== userId) {
-      throw new ForbiddenException('You do not have access to this trip');
-    }
-
-    if (!trip.isActive) {
+    if (!trip || !trip.isActive || trip.userId !== userId) {
       throw new NotFoundException(`Trip with ID ${tripId} not found`);
     }
 
@@ -43,12 +35,12 @@ export class TripsService {
   async update(tripId: string, userId: string, updateTripDto: UpdateTripDto) {
     const trip = await this.tripsRepository.findById(tripId);
 
-    if (!trip) {
+    if (!trip || !trip.isActive) {
       throw new NotFoundException(`Trip with ID ${tripId} not found`);
     }
 
     if (trip.userId !== userId) {
-      throw new ForbiddenException('You do not have access to this trip');
+      throw new NotFoundException(`Trip with ID ${tripId} not found`);
     }
 
     return this.tripsRepository.update(tripId, updateTripDto);
@@ -57,12 +49,12 @@ export class TripsService {
   async remove(tripId: string, userId: string) {
     const trip = await this.tripsRepository.findById(tripId);
 
-    if (!trip) {
+    if (!trip || !trip.isActive) {
       throw new NotFoundException(`Trip with ID ${tripId} not found`);
     }
 
     if (trip.userId !== userId) {
-      throw new ForbiddenException('You do not have access to this trip');
+      throw new NotFoundException(`Trip with ID ${tripId} not found`);
     }
 
     await this.tripsRepository.softDelete(tripId);
@@ -74,12 +66,8 @@ export class TripsService {
   async verifyOwnership(tripId: string, userId: string): Promise<void> {
     const trip = await this.tripsRepository.findById(tripId);
 
-    if (!trip || !trip.isActive) {
+    if (!trip || !trip.isActive || trip.userId !== userId) {
       throw new NotFoundException(`Trip with ID ${tripId} not found`);
-    }
-
-    if (trip.userId !== userId) {
-      throw new ForbiddenException('You do not have access to this trip');
     }
   }
 }

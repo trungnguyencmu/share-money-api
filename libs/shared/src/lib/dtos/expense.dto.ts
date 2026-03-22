@@ -7,7 +7,6 @@ import {
   IsPositive,
   IsString,
   MaxLength,
-  Min,
 } from 'class-validator';
 
 export class CreateExpenseDto {
@@ -32,12 +31,12 @@ export class CreateExpenseDto {
   title: string;
 
   @ApiProperty({
-    description: 'Amount in VND',
+    description: 'Amount in VND (must be positive)',
     example: 500000,
-    minimum: 0,
+    minimum: 1,
   })
   @IsNumber()
-  @Min(0)
+  @IsPositive()
   amount: number;
 
   @ApiProperty({
@@ -70,13 +69,13 @@ export class UpdateExpenseDto {
   title?: string;
 
   @ApiPropertyOptional({
-    description: 'Amount in VND',
+    description: 'Amount in VND (must be positive)',
     example: 500000,
-    minimum: 0,
+    minimum: 1,
   })
   @IsNumber()
   @IsOptional()
-  @Min(0)
+  @IsPositive()
   amount?: number;
 
   @ApiPropertyOptional({

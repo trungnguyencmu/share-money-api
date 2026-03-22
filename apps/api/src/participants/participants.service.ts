@@ -1,5 +1,6 @@
 import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
 import { AddParticipantDto, generateTimestamp } from '@share-money/shared';
+import { ExpensesRepository } from '../database/repositories/expenses.repository';
 import { ParticipantsRepository } from '../database/repositories/participants.repository';
 import { TripsService } from '../trips/trips.service';
 
@@ -7,6 +8,7 @@ import { TripsService } from '../trips/trips.service';
 export class ParticipantsService {
   constructor(
     private readonly participantsRepository: ParticipantsRepository,
+    private readonly expensesRepository: ExpensesRepository,
     private readonly tripsService: TripsService
   ) {}
 
@@ -24,7 +26,7 @@ export class ParticipantsService {
 
     const participant = {
       tripId,
-      participantName: addParticipantDto.participantName.trim(),
+      participantName: addParticipantDto.participantName,
       addedAt: generateTimestamp(),
     };
 
@@ -48,6 +50,15 @@ export class ParticipantsService {
 
     if (!exists) {
       throw new NotFoundException('Participant not found');
+    }
+
+    const expenses = await this.expensesRepository.findByTripId(tripId);
+    const isReferenced = expenses.some((e) => e.payer === participantName);
+
+    if (isReferenced) {
+      throw new ConflictException(
+        `Cannot delete participant "${participantName}" because they are referenced as a payer on existing expenses`
+      );
     }
 
     await this.participantsRepository.delete(tripId, participantName);

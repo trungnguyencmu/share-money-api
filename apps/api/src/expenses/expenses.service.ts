@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -12,6 +13,7 @@ import {
   generateTimestamp,
 } from '@share-money/shared';
 import { ExpensesRepository } from '../database/repositories/expenses.repository';
+import { ParticipantsRepository } from '../database/repositories/participants.repository';
 import { TripsService } from '../trips/trips.service';
 
 @Injectable()
@@ -20,6 +22,7 @@ export class ExpensesService {
 
   constructor(
     private readonly expensesRepository: ExpensesRepository,
+    private readonly participantsRepository: ParticipantsRepository,
     private readonly tripsService: TripsService,
     private readonly configService: ConfigService
   ) {
@@ -38,6 +41,7 @@ export class ExpensesService {
 
   async create(tripId: string, userId: string, createExpenseDto: CreateExpenseDto) {
     await this.tripsService.verifyOwnership(tripId, userId);
+    await this.validatePayer(tripId, createExpenseDto.payer);
 
     const expense = {
       tripId,
@@ -80,6 +84,10 @@ export class ExpensesService {
       throw new NotFoundException(`Expense with ID ${expenseId} not found`);
     }
 
+    if (updateExpenseDto.payer) {
+      await this.validatePayer(tripId, updateExpenseDto.payer);
+    }
+
     return this.expensesRepository.update(tripId, expenseId, updateExpenseDto);
   }
 
@@ -107,6 +115,20 @@ export class ExpensesService {
     }
 
     await this.expensesRepository.deleteAllByTripId(tripId);
+  }
+
+  private async validatePayer(tripId: string, payer: string): Promise<void> {
+    const names = await this.participantsRepository.getParticipantNames(tripId);
+    const match = names.some(
+      (name) => name.toLowerCase() === payer.trim().toLowerCase()
+    );
+
+    if (!match) {
+      throw new BadRequestException(
+        `Payer "${payer}" is not a participant in this trip. ` +
+        `Available participants: ${names.join(', ') || '(none)'}`
+      );
+    }
   }
 
   private verifyPassword(input: string): boolean {
