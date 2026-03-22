@@ -15,7 +15,7 @@ Structured remediation plan from codebase review. Ordered by blast radius and de
 | 01 | Critical Config & Security Fixes | P0 | Done | C1-C6 | [phase-01](./phase-01-critical-config-security.md) |
 | 02 | DynamoDB Reliability | P0 | Done | M1, M2 | [phase-02](./phase-02-dynamodb-reliability.md) |
 | 03 | Data Integrity & Business Logic | P1 | Done | M3-M8, M7 | [phase-03](./phase-03-data-integrity.md) |
-| 04 | API Design & Auth Hardening | P1 | Pending | M7, M9-M12 | [phase-04](./phase-04-api-design-auth.md) |
+| 04 | API Design & Auth Hardening | P1 | Done (M11,M12 deferred) | M7, M9, M10 | [phase-04](./phase-04-api-design-auth.md) |
 | 05 | Code Quality & DX | P2 | Pending | m1-m14 | [phase-05](./phase-05-code-quality-dx.md) |
 
 ## Dependency Graph

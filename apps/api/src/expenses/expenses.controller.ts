@@ -1,10 +1,9 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Headers, UseGuards, BadRequestException } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiHeader } from '@nestjs/swagger';
 import {
   CreateExpenseDto,
   UpdateExpenseDto,
   ExpenseResponseDto,
-  DeleteExpenseDto,
 } from '@share-money/shared';
 import { CurrentUser, CurrentUserData } from '../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -86,31 +85,39 @@ export class ExpensesController {
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Delete expense (requires password)' })
+  @ApiOperation({ summary: 'Delete expense (requires admin password header)' })
+  @ApiHeader({ name: 'x-admin-password', description: 'Admin password for deletion authorization', required: true })
   @ApiResponse({ status: 200, description: 'Expense deleted successfully' })
+  @ApiResponse({ status: 400, description: 'Missing x-admin-password header' })
   @ApiResponse({ status: 401, description: 'Unauthorized or invalid password' })
-  @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Expense not found' })
   async remove(
     @Param('tripId') tripId: string,
     @Param('id') id: string,
     @CurrentUser() user: CurrentUserData,
-    @Body() deleteDto: DeleteExpenseDto
+    @Headers('x-admin-password') password: string
   ): Promise<void> {
-    await this.expensesService.remove(tripId, id, user.userId, deleteDto.password);
+    if (!password) {
+      throw new BadRequestException('x-admin-password header is required');
+    }
+    await this.expensesService.remove(tripId, id, user.userId, password);
   }
 
   @Delete()
-  @ApiOperation({ summary: 'Delete all expenses in trip (requires password)' })
+  @ApiOperation({ summary: 'Delete all expenses in trip (requires admin password header)' })
+  @ApiHeader({ name: 'x-admin-password', description: 'Admin password for deletion authorization', required: true })
   @ApiResponse({ status: 200, description: 'All expenses deleted successfully' })
+  @ApiResponse({ status: 400, description: 'Missing x-admin-password header' })
   @ApiResponse({ status: 401, description: 'Unauthorized or invalid password' })
-  @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Trip not found' })
   async removeAll(
     @Param('tripId') tripId: string,
     @CurrentUser() user: CurrentUserData,
-    @Body() deleteDto: DeleteExpenseDto
+    @Headers('x-admin-password') password: string
   ): Promise<void> {
-    await this.expensesService.removeAll(tripId, user.userId, deleteDto.password);
+    if (!password) {
+      throw new BadRequestException('x-admin-password header is required');
+    }
+    await this.expensesService.removeAll(tripId, user.userId, password);
   }
 }

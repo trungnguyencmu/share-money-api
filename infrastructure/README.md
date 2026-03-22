@@ -2,6 +2,37 @@
 
 This directory contains Infrastructure as Code (IaC) templates for the Share Money API.
 
+## Cognito User Pool
+
+### Deploy Cognito
+
+```bash
+# For development environment
+aws cloudformation deploy \
+  --template-file cognito.yaml \
+  --stack-name share-money-cognito-dev \
+  --parameter-overrides Environment=dev CallbackUrl=http://localhost:5173 \
+  --region ap-southeast-1
+
+# For production environment
+aws cloudformation deploy \
+  --template-file cognito.yaml \
+  --stack-name share-money-cognito-prod \
+  --parameter-overrides Environment=prod CallbackUrl=https://your-frontend-domain.com \
+  --region ap-southeast-1
+```
+
+After deployment, copy the outputs into your `.env`:
+
+```bash
+aws cloudformation describe-stacks \
+  --stack-name share-money-cognito-dev \
+  --region ap-southeast-1 \
+  --query 'Stacks[0].Outputs'
+```
+
+Map outputs to env vars: `UserPoolId` → `COGNITO_USER_POOL_ID`, `UserPoolClientId` → `COGNITO_CLIENT_ID`, `CognitoIssuer` → `COGNITO_ISSUER`.
+
 ## DynamoDB Tables
 
 ### Deploy Tables

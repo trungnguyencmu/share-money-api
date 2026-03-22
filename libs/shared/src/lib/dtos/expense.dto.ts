@@ -130,13 +130,3 @@ export class ExpenseResponseDto {
   })
   createdAt: string;
 }
-
-export class DeleteExpenseDto {
-  @ApiProperty({
-    description: 'Admin password for deletion authorization',
-    example: 'ok',
-  })
-  @IsString()
-  @IsNotEmpty()
-  password: string;
-}

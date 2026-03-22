@@ -27,7 +27,7 @@ async function bootstrap() {
     origin: isProduction ? allowedOrigins : true,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Admin-Password'],
   });
 
   // Security headers (register early)
