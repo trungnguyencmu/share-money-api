@@ -1,0 +1,154 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'DynamoDB tables for Share Money API'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - staging
+      - prod
+    Description: Environment name
+
+Resources:
+  # Trips Table
+  TripsTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub 'share-money-trips-${Environment}'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: tripId
+          AttributeType: S
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: createdAt
+          AttributeType: S
+      KeySchema:
+        - AttributeName: tripId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: UserId-CreatedAt-Index
+          KeySchema:
+            - AttributeName: userId
+              KeyType: HASH
+            - AttributeName: createdAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      Tags:
+        - Key: Application
+          Value: ShareMoney
+        - Key: Environment
+          Value: !Ref Environment
+
+  # Expenses Table
+  ExpensesTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub 'share-money-expenses-${Environment}'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: tripId
+          AttributeType: S
+        - AttributeName: expenseId
+          AttributeType: S
+        - AttributeName: createdAt
+          AttributeType: S
+      KeySchema:
+        - AttributeName: tripId
+          KeyType: HASH
+        - AttributeName: expenseId
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: TripId-CreatedAt-Index
+          KeySchema:
+            - AttributeName: tripId
+              KeyType: HASH
+            - AttributeName: createdAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      Tags:
+        - Key: Application
+          Value: ShareMoney
+        - Key: Environment
+          Value: !Ref Environment
+
+  # Participants Table
+  ParticipantsTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub 'share-money-participants-${Environment}'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: tripId
+          AttributeType: S
+        - AttributeName: participantName
+          AttributeType: S
+      KeySchema:
+        - AttributeName: tripId
+          KeyType: HASH
+        - AttributeName: participantName
+          KeyType: RANGE
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      Tags:
+        - Key: Application
+          Value: ShareMoney
+        - Key: Environment
+          Value: !Ref Environment
+
+Outputs:
+  TripsTableName:
+    Description: Name of the Trips table
+    Value: !Ref TripsTable
+    Export:
+      Name: !Sub '${AWS::StackName}-TripsTable'
+
+  TripsTableArn:
+    Description: ARN of the Trips table
+    Value: !GetAtt TripsTable.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-TripsTableArn'
+
+  ExpensesTableName:
+    Description: Name of the Expenses table
+    Value: !Ref ExpensesTable
+    Export:
+      Name: !Sub '${AWS::StackName}-ExpensesTable'
+
+  ExpensesTableArn:
+    Description: ARN of the Expenses table
+    Value: !GetAtt ExpensesTable.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-ExpensesTableArn'
+
+  ParticipantsTableName:
+    Description: Name of the Participants table
+    Value: !Ref ParticipantsTable
+    Export:
+      Name: !Sub '${AWS::StackName}-ParticipantsTable'
+
+  ParticipantsTableArn:
+    Description: ARN of the Participants table
+    Value: !GetAtt ParticipantsTable.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-ParticipantsTableArn'
