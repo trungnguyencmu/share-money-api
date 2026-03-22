@@ -18,7 +18,7 @@
         "assets": ["apps/api/src/assets"],
         "optimization": false,
         "outputHashing": "none",
-        "generatePackageJson": true,
+        "generatePackageJson": false,
         "webpackConfig": "apps/api/webpack.config.js"
       },
       "configurations": {
