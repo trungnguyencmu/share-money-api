@@ -30,19 +30,8 @@ export class DynamoDBService {
 
   constructor(private configService: ConfigService) {
     const region = this.configService.get<string>('AWS_REGION');
-    const accessKeyId = this.configService.get<string>('AWS_ACCESS_KEY_ID');
-    const secretAccessKey = this.configService.get<string>('AWS_SECRET_ACCESS_KEY');
 
-    const dynamoClient = new DynamoDBClient({
-      region,
-      ...(accessKeyId &&
-        secretAccessKey && {
-          credentials: {
-            accessKeyId,
-            secretAccessKey,
-          },
-        }),
-    });
+    const dynamoClient = new DynamoDBClient({ region });
 
     this.client = DynamoDBDocumentClient.from(dynamoClient, {
       marshallOptions: {

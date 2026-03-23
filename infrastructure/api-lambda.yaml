@@ -1,0 +1,129 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: 'Share Money API - Lambda + API Gateway'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - staging
+      - prod
+
+  S3Bucket:
+    Type: String
+    Description: S3 bucket containing the Lambda code zip
+
+  S3Key:
+    Type: String
+    Description: S3 key for the Lambda code zip
+
+  CognitoUserPoolId:
+    Type: String
+    Description: Cognito User Pool ID
+
+  CognitoClientId:
+    Type: String
+    Description: Cognito App Client ID
+
+  CognitoRegion:
+    Type: String
+    Default: ap-southeast-1
+
+  CorsOrigin:
+    Type: String
+    Default: '*'
+    Description: Allowed CORS origin(s), comma-separated
+
+  AdminPassword:
+    Type: String
+    NoEcho: true
+    Description: Admin password for protected operations
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 256
+    Runtime: nodejs20.x
+
+Resources:
+  ApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'share-money-api-${Environment}'
+      Handler: lambda.handler
+      CodeUri:
+        Bucket: !Ref S3Bucket
+        Key: !Ref S3Key
+      Environment:
+        Variables:
+          NODE_ENV: production
+          DYNAMODB_TRIPS_TABLE: !Sub 'share-money-trips-${Environment}'
+          DYNAMODB_EXPENSES_TABLE: !Sub 'share-money-expenses-${Environment}'
+          DYNAMODB_PARTICIPANTS_TABLE: !Sub 'share-money-participants-${Environment}'
+          COGNITO_USER_POOL_ID: !Ref CognitoUserPoolId
+          COGNITO_CLIENT_ID: !Ref CognitoClientId
+          COGNITO_REGION: !Ref CognitoRegion
+          COGNITO_ISSUER: !Sub 'https://cognito-idp.${CognitoRegion}.amazonaws.com/${CognitoUserPoolId}'
+          CORS_ORIGIN: !Ref CorsOrigin
+          ADMIN_PASSWORD: !Ref AdminPassword
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Sub 'share-money-trips-${Environment}'
+        - DynamoDBCrudPolicy:
+            TableName: !Sub 'share-money-expenses-${Environment}'
+        - DynamoDBCrudPolicy:
+            TableName: !Sub 'share-money-participants-${Environment}'
+      Events:
+        RootPath:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /
+            Method: ANY
+        ProxyPath:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /{proxy+}
+            Method: ANY
+
+  HttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      StageName: $default
+      CorsConfiguration:
+        AllowOrigins:
+          - '*'
+        AllowMethods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - PATCH
+          - OPTIONS
+        AllowHeaders:
+          - Content-Type
+          - Authorization
+          - Accept
+          - X-Admin-Password
+
+  ApiFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/share-money-api-${Environment}'
+      RetentionInDays: 14
+
+Outputs:
+  ApiUrl:
+    Description: API Gateway endpoint URL
+    Value: !Sub 'https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com'
+    Export:
+      Name: !Sub '${AWS::StackName}-ApiUrl'
+
+  FunctionArn:
+    Description: Lambda function ARN
+    Value: !GetAtt ApiFunction.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-FunctionArn'

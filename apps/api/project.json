@@ -28,6 +28,23 @@
         }
       }
     },
+    "build-lambda": {
+      "executor": "@nx/webpack:webpack",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "target": "node",
+        "compiler": "tsc",
+        "main": "apps/api/src/lambda.ts",
+        "tsConfig": "apps/api/tsconfig.app.json",
+        "outputPath": "dist/apps/api-lambda",
+        "outputFileName": "lambda.js",
+        "assets": [],
+        "optimization": true,
+        "outputHashing": "none",
+        "generatePackageJson": false,
+        "webpackConfig": "apps/api/webpack.lambda.config.js"
+      }
+    },
     "serve": {
       "executor": "@nx/js:node",
       "options": {
