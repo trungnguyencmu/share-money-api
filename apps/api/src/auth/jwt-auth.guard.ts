@@ -6,7 +6,7 @@ import { Observable } from 'rxjs';
 export const IS_PUBLIC_KEY = 'isPublic';
 
 @Injectable()
-export class JwtAuthGuard extends AuthGuard('jwt') {
+export class JwtAuthGuard extends AuthGuard(['jwt', 'guest-jwt']) {
   constructor(private reflector: Reflector) {
     super();
   }

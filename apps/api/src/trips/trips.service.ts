@@ -1,5 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { CreateTripDto, UpdateTripDto, Trip, generateTripId, generateTimestamp } from '@share-money/shared';
+import {
+  CreateTripDto,
+  UpdateTripDto,
+  Trip,
+  generateTripId,
+  generateTimestamp,
+  generateInviteCode,
+} from '@share-money/shared';
 import { TripMembersRepository } from '../database/repositories/trip-members.repository';
 import { TripsRepository } from '../database/repositories/trips.repository';
 
@@ -11,12 +18,13 @@ export class TripsService {
   ) {}
 
   async create(userId: string, createTripDto: CreateTripDto, email?: string, displayName?: string) {
-    const trip = {
+    const trip: Trip = {
       tripId: generateTripId(),
       userId,
       tripName: createTripDto.tripName,
       createdAt: generateTimestamp(),
       isActive: true,
+      inviteCode: generateInviteCode(),
     };
 
     await this.tripsRepository.create(trip);
@@ -57,7 +65,7 @@ export class TripsService {
   }
 
   async update(tripId: string, userId: string, updateTripDto: UpdateTripDto) {
-    await this.verifyAccess(tripId, userId);
+    await this.verifyOwnership(tripId, userId);
     return this.tripsRepository.update(tripId, updateTripDto);
   }
 
@@ -84,6 +92,19 @@ export class TripsService {
     }
 
     return trip;
+  }
+
+  async findByInviteCode(code: string): Promise<Trip> {
+    const trip = await this.tripsRepository.findByInviteCode(code);
+    if (!trip || !trip.isActive) {
+      throw new NotFoundException('Invalid or expired invite code');
+    }
+    return trip;
+  }
+
+  async regenerateInviteCode(tripId: string, userId: string): Promise<Trip> {
+    await this.getActiveOwnedTrip(tripId, userId);
+    return this.tripsRepository.update(tripId, { inviteCode: generateInviteCode() });
   }
 
   /** Check if user is the trip owner. Returns trip. */

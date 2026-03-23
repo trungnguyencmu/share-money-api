@@ -116,6 +116,21 @@ export class TripsRepository {
   }
 
   /**
+   * Find trip by invite code using GSI
+   */
+  async findByInviteCode(inviteCode: string): Promise<Trip | null> {
+    const items = await this.dynamodbService.query({
+      TableName: this.tableName,
+      IndexName: 'InviteCode-Index',
+      KeyConditionExpression: 'inviteCode = :code',
+      ExpressionAttributeValues: {
+        ':code': inviteCode,
+      },
+    });
+    return items.length > 0 ? (items[0] as Trip) : null;
+  }
+
+  /**
    * Soft delete trip
    */
   async softDelete(tripId: string): Promise<void> {

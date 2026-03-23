@@ -27,6 +27,8 @@ Resources:
           AttributeType: S
         - AttributeName: createdAt
           AttributeType: S
+        - AttributeName: inviteCode
+          AttributeType: S
       KeySchema:
         - AttributeName: tripId
           KeyType: HASH
@@ -37,6 +39,12 @@ Resources:
               KeyType: HASH
             - AttributeName: createdAt
               KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: InviteCode-Index
+          KeySchema:
+            - AttributeName: inviteCode
+              KeyType: HASH
           Projection:
             ProjectionType: ALL
       StreamSpecification:

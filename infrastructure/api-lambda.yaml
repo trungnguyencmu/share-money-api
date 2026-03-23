@@ -41,6 +41,11 @@ Parameters:
     NoEcho: true
     Description: Admin password for protected operations
 
+  GuestJwtSecret:
+    Type: String
+    NoEcho: true
+    Description: Secret for signing guest JWT tokens
+
 Globals:
   Function:
     Timeout: 30
@@ -69,6 +74,7 @@ Resources:
           COGNITO_ISSUER: !Sub 'https://cognito-idp.${CognitoRegion}.amazonaws.com/${CognitoUserPoolId}'
           CORS_ORIGIN: !Ref CorsOrigin
           ADMIN_PASSWORD: !Ref AdminPassword
+          GUEST_JWT_SECRET: !Ref GuestJwtSecret
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Sub 'share-money-trips-${Environment}'

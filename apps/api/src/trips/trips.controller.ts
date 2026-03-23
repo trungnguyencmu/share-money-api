@@ -30,6 +30,11 @@ export class TripsController {
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async findAll(@CurrentUser() user: CurrentUserData): Promise<TripResponseDto[]> {
+    if (user.isGuest && user.tripId) {
+      const trip = await this.tripsService.verifyAccess(user.tripId, user.userId);
+      const { inviteCode, ...tripWithoutCode } = trip;
+      return [tripWithoutCode as TripResponseDto];
+    }
     return this.tripsService.findAll(user.userId);
   }
 
@@ -43,7 +48,13 @@ export class TripsController {
     @Param('id') id: string,
     @CurrentUser() user: CurrentUserData
   ): Promise<TripResponseDto> {
-    return this.tripsService.findOne(id, user.userId);
+    const trip = await this.tripsService.findOne(id, user.userId);
+    // Only show invite code to trip owner
+    if (trip.userId !== user.userId) {
+      const { inviteCode, ...tripWithoutCode } = trip;
+      return tripWithoutCode as TripResponseDto;
+    }
+    return trip;
   }
 
   @Patch(':id')
@@ -68,5 +79,17 @@ export class TripsController {
   @ApiResponse({ status: 404, description: 'Trip not found' })
   async remove(@Param('id') id: string, @CurrentUser() user: CurrentUserData): Promise<void> {
     await this.tripsService.remove(id, user.userId);
+  }
+
+  @Post(':id/regenerate-invite-code')
+  @ApiOperation({ summary: 'Regenerate invite code (owner only)' })
+  @ApiResponse({ status: 200, description: 'New invite code generated', type: TripResponseDto })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Trip not found' })
+  async regenerateInviteCode(
+    @Param('id') id: string,
+    @CurrentUser() user: CurrentUserData
+  ): Promise<TripResponseDto> {
+    return this.tripsService.regenerateInviteCode(id, user.userId);
   }
 }

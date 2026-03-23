@@ -4,3 +4,4 @@ export * from './expense.dto';
 export * from './participant.dto';
 export * from './settlement.dto';
 export * from './trip-member.dto';
+export * from './guest-access.dto';

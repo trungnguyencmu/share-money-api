@@ -3,6 +3,6 @@ export interface TripMember {
   userId: string;
   displayName: string;
   email: string;
-  role: 'owner' | 'member';
+  role: 'owner' | 'member' | 'guest';
   joinedAt: string;
 }

@@ -4,6 +4,9 @@ export interface CurrentUserData {
   userId: string;
   email?: string;
   username?: string;
+  isGuest?: boolean;
+  tripId?: string;
+  displayName?: string;
 }
 
 /**

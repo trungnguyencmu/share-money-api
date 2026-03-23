@@ -46,7 +46,8 @@ aws cloudformation deploy \
     CognitoClientId="3u731bj9fqbm610epv6b1el5er" \
     CognitoRegion="ap-southeast-1" \
     CorsOrigin="*" \
-    AdminPassword="ShareMoney2026!Prod"
+    AdminPassword="ShareMoney2026!Prod" \
+    GuestJwtSecret="ShareMoneyGuest2026!SecretKey"
 
 # Step 6: Get API URL
 API_URL=$(aws cloudformation describe-stacks \

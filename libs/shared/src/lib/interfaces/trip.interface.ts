@@ -4,4 +4,5 @@ export interface Trip {
   tripName: string;
   createdAt: string;
   isActive: boolean;
+  inviteCode?: string;
 }

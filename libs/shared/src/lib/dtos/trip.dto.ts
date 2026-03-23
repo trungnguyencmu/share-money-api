@@ -55,4 +55,10 @@ export class TripResponseDto {
     example: true,
   })
   isActive: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Invite code (visible to trip owner only)',
+    example: 'A3F1B2C4',
+  })
+  inviteCode?: string;
 }
