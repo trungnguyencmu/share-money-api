@@ -63,6 +63,7 @@ export class GuestAccessController {
       email: '',
       role: 'guest',
       joinedAt: generateTimestamp(),
+      isSettled: false,
     });
 
     const token = this.guestJwtTokenService.signGuestToken(

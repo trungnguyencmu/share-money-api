@@ -54,6 +54,24 @@ export class ExpensesRepository {
   }
 
   /**
+   * Find all expenses for a trip within a date range
+   */
+  async findByTripIdAndDateRange(
+    tripId: string,
+    startDate?: string,
+    endDate?: string,
+  ): Promise<Expense[]> {
+    const expenses = await this.findByTripId(tripId);
+    return expenses.filter((expense) => {
+      if (!startDate && !endDate) return true;
+      const expenseDate = expense.date;
+      if (startDate && expenseDate < startDate) return false;
+      if (endDate && expenseDate > endDate) return false;
+      return true;
+    });
+  }
+
+  /**
    * Update expense
    */
   async update(tripId: string, expenseId: string, updates: Partial<Expense>): Promise<Expense> {

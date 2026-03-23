@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
+  IsBoolean,
   IsEmail,
   IsNotEmpty,
   IsString,
@@ -15,6 +16,16 @@ export class AddTripMemberDto {
   @IsEmail()
   @IsNotEmpty()
   email: string;
+}
+
+export class MarkSettledDto {
+  @ApiProperty({
+    description: 'Whether the member has settled their balance',
+    example: true,
+  })
+  @IsBoolean()
+  @IsNotEmpty()
+  isSettled: boolean;
 }
 
 export class UpdateDisplayNameDto {
@@ -71,4 +82,7 @@ export class TripMemberResponseDto {
 
   @ApiProperty({ description: 'When the user joined' })
   joinedAt: string;
+
+  @ApiProperty({ description: 'Whether the member has settled their balance' })
+  isSettled: boolean;
 }

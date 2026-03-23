@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Delete,
   Body,
   Param,
@@ -14,7 +15,7 @@ import {
   ApiResponse,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import { AddTripMemberDto, TripMemberResponseDto } from '@share-money/shared';
+import { AddTripMemberDto, MarkSettledDto, TripMemberResponseDto } from '@share-money/shared';
 import {
   CurrentUser,
   CurrentUserData,
@@ -74,5 +75,20 @@ export class MembersController {
     @CurrentUser() user: CurrentUserData,
   ): Promise<void> {
     await this.membersService.removeMember(tripId, user.userId, targetUserId);
+  }
+
+  @Patch(':userId/settled')
+  @ApiOperation({ summary: 'Mark a member as settled (owner only)' })
+  @ApiResponse({ status: 200, description: 'Member settlement status updated', type: TripMemberResponseDto })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - not trip owner' })
+  @ApiResponse({ status: 404, description: 'Member not found' })
+  async markAsSettled(
+    @Param('tripId') tripId: string,
+    @Param('userId') targetUserId: string,
+    @CurrentUser() user: CurrentUserData,
+    @Body() dto: MarkSettledDto,
+  ): Promise<TripMemberResponseDto> {
+    return this.membersService.markAsSettled(tripId, user.userId, targetUserId, dto.isSettled);
   }
 }

@@ -5,4 +5,5 @@ export interface TripMember {
   email: string;
   role: 'owner' | 'member' | 'guest';
   joinedAt: string;
+  isSettled: boolean;
 }

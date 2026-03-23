@@ -26,8 +26,11 @@ export class TripsService {
       tripName: createTripDto.tripName,
       createdAt: generateTimestamp(),
       isActive: true,
+      status: 'active',
       inviteCode: generateInviteCode(),
       ...(createTripDto.imageS3Key && { imageS3Key: createTripDto.imageS3Key }),
+      ...(createTripDto.startDate && { startDate: createTripDto.startDate }),
+      ...(createTripDto.endDate && { endDate: createTripDto.endDate }),
     };
 
     await this.tripsRepository.create(trip);
@@ -40,6 +43,7 @@ export class TripsService {
       email: email || '',
       role: 'owner',
       joinedAt: trip.createdAt,
+      isSettled: false,
     });
 
     return this.attachImageUrl(trip);

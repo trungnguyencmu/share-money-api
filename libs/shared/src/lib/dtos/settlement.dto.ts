@@ -25,6 +25,12 @@ export class MemberBalanceDto implements MemberBalance {
     example: 500000,
   })
   balance: number;
+
+  @ApiProperty({
+    description: 'Whether the member has settled their balance',
+    example: false,
+  })
+  isSettled: boolean;
 }
 
 export class TransactionDto implements Transaction {

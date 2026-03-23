@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import {
   calculateBalances,
   calculateTransactions,
-  SettlementResult,
+  SettlementResponseDto,
 } from '@share-money/shared';
 import { ExpensesRepository } from '../database/repositories/expenses.repository';
 import { TripMembersRepository } from '../database/repositories/trip-members.repository';
@@ -16,20 +16,39 @@ export class SettlementService {
     private readonly tripsService: TripsService,
   ) {}
 
-  async calculateSettlement(tripId: string, userId: string): Promise<SettlementResult> {
-    await this.tripsService.verifyAccess(tripId, userId);
+  async calculateSettlement(
+    tripId: string,
+    userId: string,
+    startDate?: string,
+    endDate?: string,
+  ): Promise<SettlementResponseDto> {
+    const trip = await this.tripsService.verifyAccess(tripId, userId);
 
-    const [expenses, memberNames] = await Promise.all([
-      this.expensesRepository.findByTripId(tripId),
-      this.tripMembersRepository.getMemberDisplayNames(tripId),
+    const effectiveStartDate = startDate || trip.startDate;
+    const effectiveEndDate = endDate || trip.endDate;
+
+    const [expenses, members] = await Promise.all([
+      this.expensesRepository.findByTripIdAndDateRange(tripId, effectiveStartDate, effectiveEndDate),
+      this.tripMembersRepository.findByTripId(tripId),
     ]);
 
+    const memberNames = members.map((m) => m.displayName).sort();
     const balances = calculateBalances(expenses, memberNames);
-    const transactions = calculateTransactions(balances);
+
+    // Merge isSettled status into balances
+    const balancesWithSettled = balances.map((balance) => {
+      const member = members.find((m) => m.displayName === balance.member);
+      return {
+        ...balance,
+        isSettled: member?.isSettled ?? false,
+      };
+    });
+
+    const transactions = calculateTransactions(balancesWithSettled);
     const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
 
     return {
-      balances,
+      balances: balancesWithSettled,
       transactions,
       totalExpenses,
       participantCount: memberNames.length || balances.length,

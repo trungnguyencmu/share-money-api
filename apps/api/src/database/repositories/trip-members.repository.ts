@@ -17,11 +17,12 @@ export class TripMembersRepository {
   }
 
   async create(member: TripMember): Promise<TripMember> {
+    const item = { ...member, isSettled: member.isSettled ?? false };
     await this.dynamodbService.put({
       TableName: this.tableName,
-      Item: member,
+      Item: item,
     });
-    return member;
+    return item;
   }
 
   async findByTripAndUser(tripId: string, userId: string): Promise<TripMember | null> {
@@ -76,6 +77,15 @@ export class TripMembersRepository {
       Key: { tripId, userId },
       UpdateExpression: 'SET displayName = :displayName',
       ExpressionAttributeValues: { ':displayName': displayName },
+    });
+  }
+
+  async updateIsSettled(tripId: string, userId: string, isSettled: boolean): Promise<void> {
+    await this.dynamodbService.update({
+      TableName: this.tableName,
+      Key: { tripId, userId },
+      UpdateExpression: 'SET isSettled = :isSettled',
+      ExpressionAttributeValues: { ':isSettled': isSettled },
     });
   }
 

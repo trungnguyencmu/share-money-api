@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsDateString, IsNotEmpty, IsOptional, IsString, IsIn, MaxLength } from 'class-validator';
 
 export class CreateTripDto {
   @ApiProperty({
@@ -21,6 +21,22 @@ export class CreateTripDto {
   @IsOptional()
   @MaxLength(500)
   imageS3Key?: string;
+
+  @ApiPropertyOptional({
+    description: 'Trip start date (ISO date string)',
+    example: '2025-03-01',
+  })
+  @IsDateString()
+  @IsOptional()
+  startDate?: string;
+
+  @ApiPropertyOptional({
+    description: 'Trip end date (ISO date string)',
+    example: '2025-03-15',
+  })
+  @IsDateString()
+  @IsOptional()
+  endDate?: string;
 }
 
 export class UpdateTripDto {
@@ -43,6 +59,31 @@ export class UpdateTripDto {
   @IsOptional()
   @MaxLength(500)
   imageS3Key?: string;
+
+  @ApiPropertyOptional({
+    description: 'Trip status',
+    enum: ['active', 'settled'],
+    example: 'active',
+  })
+  @IsIn(['active', 'settled'])
+  @IsOptional()
+  status?: 'active' | 'settled';
+
+  @ApiPropertyOptional({
+    description: 'Trip start date (ISO date string)',
+    example: '2025-03-01',
+  })
+  @IsDateString()
+  @IsOptional()
+  startDate?: string;
+
+  @ApiPropertyOptional({
+    description: 'Trip end date (ISO date string)',
+    example: '2025-03-15',
+  })
+  @IsDateString()
+  @IsOptional()
+  endDate?: string;
 }
 
 export class TripResponseDto {
@@ -87,4 +128,23 @@ export class TripResponseDto {
     example: 'https://s3.amazonaws.com/...',
   })
   imageUrl?: string;
+
+  @ApiProperty({
+    description: 'Trip status',
+    enum: ['active', 'settled'],
+    example: 'active',
+  })
+  status: 'active' | 'settled';
+
+  @ApiPropertyOptional({
+    description: 'Trip start date (ISO date string)',
+    example: '2025-03-01',
+  })
+  startDate?: string;
+
+  @ApiPropertyOptional({
+    description: 'Trip end date (ISO date string)',
+    example: '2025-03-15',
+  })
+  endDate?: string;
 }

@@ -42,10 +42,10 @@ export class MembersService {
       email: cognitoUser.email,
       role: 'member' as const,
       joinedAt: generateTimestamp(),
+      isSettled: false,
     };
 
-    await this.tripMembersRepository.create(member);
-    return member;
+    return this.tripMembersRepository.create(member);
   }
 
   async getMembers(tripId: string, userId: string) {
@@ -89,5 +89,25 @@ export class MembersService {
     }
 
     await this.tripMembersRepository.delete(tripId, targetUserId);
+  }
+
+  async markAsSettled(
+    tripId: string,
+    userId: string,
+    targetUserId: string,
+    isSettled: boolean,
+  ) {
+    await this.tripsService.verifyOwnership(tripId, userId);
+
+    const member = await this.tripMembersRepository.findByTripAndUser(
+      tripId,
+      targetUserId,
+    );
+    if (!member) {
+      throw new NotFoundException('Member not found in this trip');
+    }
+
+    await this.tripMembersRepository.updateIsSettled(tripId, targetUserId, isSettled);
+    return { ...member, isSettled };
   }
 }
