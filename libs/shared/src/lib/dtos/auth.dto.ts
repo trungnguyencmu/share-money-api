@@ -20,13 +20,13 @@ export class RegisterDto {
   email: string;
 
   @ApiProperty({
-    description: 'Password (min 8 chars, must include uppercase, lowercase, and numbers)',
-    example: 'MyPass123',
-    minLength: 8,
+    description: 'Password (min 6 characters)',
+    example: 'mypass1',
+    minLength: 6,
   })
   @IsString()
   @IsNotEmpty()
-  @MinLength(8)
+  @MinLength(6)
   @MaxLength(128)
   password: string;
 
@@ -92,6 +92,45 @@ export class ResendConfirmationCodeDto {
   @IsEmail()
   @IsNotEmpty()
   email: string;
+}
+
+export class ForgotPasswordDto {
+  @ApiProperty({
+    description: 'Email address of the account',
+    example: 'user@example.com',
+  })
+  @IsEmail()
+  @IsNotEmpty()
+  email: string;
+}
+
+export class ResetPasswordDto {
+  @ApiProperty({
+    description: 'Email address of the account',
+    example: 'user@example.com',
+  })
+  @IsEmail()
+  @IsNotEmpty()
+  email: string;
+
+  @ApiProperty({
+    description: 'Reset code sent to email',
+    example: '123456',
+  })
+  @IsString()
+  @IsNotEmpty()
+  confirmationCode: string;
+
+  @ApiProperty({
+    description: 'New password (min 6 characters)',
+    example: 'newpass1',
+    minLength: 6,
+  })
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(6)
+  @MaxLength(128)
+  newPassword: string;
 }
 
 // --- Response DTOs ---

@@ -6,6 +6,8 @@ import {
   ConfirmSignUpCommand,
   InitiateAuthCommand,
   ResendConfirmationCodeCommand,
+  ForgotPasswordCommand,
+  ConfirmForgotPasswordCommand,
   AuthFlowType,
 } from '@aws-sdk/client-cognito-identity-provider';
 import {
@@ -14,6 +16,8 @@ import {
   LoginDto,
   RefreshTokenDto,
   ResendConfirmationCodeDto,
+  ForgotPasswordDto,
+  ResetPasswordDto,
   AuthTokensResponseDto,
   MessageResponseDto,
 } from '@share-money/shared';
@@ -140,6 +144,41 @@ export class AuthService {
         }),
       );
       return { message: 'Confirmation code resent. Please check your email.' };
+    } catch (error) {
+      mapCognitoError(error);
+    }
+  }
+
+  async forgotPassword(dto: ForgotPasswordDto): Promise<MessageResponseDto> {
+    try {
+      await this.client.send(
+        new ForgotPasswordCommand({
+          ClientId: this.clientId,
+          Username: dto.email,
+        }),
+      );
+      return {
+        message:
+          'Password reset code sent. Please check your email.',
+      };
+    } catch (error) {
+      mapCognitoError(error);
+    }
+  }
+
+  async resetPassword(dto: ResetPasswordDto): Promise<MessageResponseDto> {
+    try {
+      await this.client.send(
+        new ConfirmForgotPasswordCommand({
+          ClientId: this.clientId,
+          Username: dto.email,
+          ConfirmationCode: dto.confirmationCode,
+          Password: dto.newPassword,
+        }),
+      );
+      return {
+        message: 'Password reset successfully. You can now log in with your new password.',
+      };
     } catch (error) {
       mapCognitoError(error);
     }

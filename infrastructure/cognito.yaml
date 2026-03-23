@@ -31,10 +31,10 @@ Resources:
         CaseSensitive: false
       Policies:
         PasswordPolicy:
-          MinimumLength: 8
-          RequireLowercase: true
-          RequireUppercase: true
-          RequireNumbers: true
+          MinimumLength: 6
+          RequireLowercase: false
+          RequireUppercase: false
+          RequireNumbers: false
           RequireSymbols: false
       Schema:
         - Name: email

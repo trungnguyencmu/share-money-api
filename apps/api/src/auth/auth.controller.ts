@@ -13,6 +13,8 @@ import {
   LoginDto,
   RefreshTokenDto,
   ResendConfirmationCodeDto,
+  ForgotPasswordDto,
+  ResetPasswordDto,
   AuthTokensResponseDto,
   MessageResponseDto,
 } from '@share-money/shared';
@@ -74,5 +76,26 @@ export class AuthController {
     @Body() dto: ResendConfirmationCodeDto,
   ): Promise<MessageResponseDto> {
     return this.authService.resendConfirmationCode(dto);
+  }
+
+  @Post('forgot-password')
+  @Public()
+  @ApiOperation({ summary: 'Request a password reset code via email' })
+  @ApiResponse({ status: 201, type: MessageResponseDto })
+  async forgotPassword(
+    @Body() dto: ForgotPasswordDto,
+  ): Promise<MessageResponseDto> {
+    return this.authService.forgotPassword(dto);
+  }
+
+  @Post('reset-password')
+  @Public()
+  @ApiOperation({ summary: 'Reset password using the code from email' })
+  @ApiResponse({ status: 201, type: MessageResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid or expired code' })
+  async resetPassword(
+    @Body() dto: ResetPasswordDto,
+  ): Promise<MessageResponseDto> {
+    return this.authService.resetPassword(dto);
   }
 }
