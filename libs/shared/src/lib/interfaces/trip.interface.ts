@@ -6,7 +6,7 @@ export interface Trip {
   isActive: boolean;
   inviteCode?: string;
   imageS3Key?: string;
-  status: 'active' | 'settled';
+  status: 'active' | 'upcoming' | 'settled';
   startDate?: string;
   endDate?: string;
 }

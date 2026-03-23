@@ -62,12 +62,12 @@ export class UpdateTripDto {
 
   @ApiPropertyOptional({
     description: 'Trip status',
-    enum: ['active', 'settled'],
-    example: 'active',
+    enum: ['active', 'upcoming', 'settled'],
+    example: 'upcoming',
   })
-  @IsIn(['active', 'settled'])
+  @IsIn(['active', 'upcoming', 'settled'])
   @IsOptional()
-  status?: 'active' | 'settled';
+  status?: 'active' | 'upcoming' | 'settled';
 
   @ApiPropertyOptional({
     description: 'Trip start date (ISO date string)',
@@ -131,10 +131,10 @@ export class TripResponseDto {
 
   @ApiProperty({
     description: 'Trip status',
-    enum: ['active', 'settled'],
+    enum: ['active', 'upcoming', 'settled'],
     example: 'active',
   })
-  status: 'active' | 'settled';
+  status: 'active' | 'upcoming' | 'settled';
 
   @ApiPropertyOptional({
     description: 'Trip start date (ISO date string)',
