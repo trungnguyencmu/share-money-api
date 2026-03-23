@@ -9,12 +9,14 @@ import {
 } from '@share-money/shared';
 import { TripMembersRepository } from '../database/repositories/trip-members.repository';
 import { TripsRepository } from '../database/repositories/trips.repository';
+import { S3Service } from '../storage/s3.service';
 
 @Injectable()
 export class TripsService {
   constructor(
     private readonly tripsRepository: TripsRepository,
     private readonly tripMembersRepository: TripMembersRepository,
+    private readonly s3Service: S3Service,
   ) {}
 
   async create(userId: string, createTripDto: CreateTripDto, email?: string, displayName?: string) {
@@ -25,6 +27,7 @@ export class TripsService {
       createdAt: generateTimestamp(),
       isActive: true,
       inviteCode: generateInviteCode(),
+      ...(createTripDto.imageS3Key && { imageS3Key: createTripDto.imageS3Key }),
     };
 
     await this.tripsRepository.create(trip);
@@ -39,7 +42,7 @@ export class TripsService {
       joinedAt: trip.createdAt,
     });
 
-    return trip;
+    return this.attachImageUrl(trip);
   }
 
   async findAll(userId: string) {
@@ -57,16 +60,25 @@ export class TripsService {
     const additionalTrips = await this.tripsRepository.findByIds(additionalTripIds);
     const activeAdditional = additionalTrips.filter((t) => t.isActive);
 
-    return [...ownedTrips, ...activeAdditional];
+    const allTrips = [...ownedTrips, ...activeAdditional];
+    return Promise.all(allTrips.map((t) => this.attachImageUrl(t)));
   }
 
   async findOne(tripId: string, userId: string) {
-    return this.verifyAccess(tripId, userId);
+    const trip = await this.verifyAccess(tripId, userId);
+    return this.attachImageUrl(trip);
   }
 
   async update(tripId: string, userId: string, updateTripDto: UpdateTripDto) {
-    await this.verifyOwnership(tripId, userId);
-    return this.tripsRepository.update(tripId, updateTripDto);
+    const trip = await this.verifyOwnership(tripId, userId);
+
+    // Delete old S3 image when replacing or removing
+    if (updateTripDto.imageS3Key !== undefined && trip.imageS3Key) {
+      await this.s3Service.deleteObject(trip.imageS3Key);
+    }
+
+    const updated = await this.tripsRepository.update(tripId, updateTripDto);
+    return this.attachImageUrl(updated);
   }
 
   async remove(tripId: string, userId: string) {
@@ -102,9 +114,10 @@ export class TripsService {
     return trip;
   }
 
-  async regenerateInviteCode(tripId: string, userId: string): Promise<Trip> {
+  async regenerateInviteCode(tripId: string, userId: string) {
     await this.getActiveOwnedTrip(tripId, userId);
-    return this.tripsRepository.update(tripId, { inviteCode: generateInviteCode() });
+    const updated = await this.tripsRepository.update(tripId, { inviteCode: generateInviteCode() });
+    return this.attachImageUrl(updated);
   }
 
   /** Check if user is the trip owner. Returns trip. */
@@ -118,5 +131,11 @@ export class TripsService {
       throw new NotFoundException(`Trip with ID ${tripId} not found`);
     }
     return trip;
+  }
+
+  private async attachImageUrl(trip: Trip): Promise<Trip & { imageUrl?: string }> {
+    if (!trip.imageS3Key) return trip;
+    const imageUrl = await this.s3Service.generatePresignedGetUrl(trip.imageS3Key);
+    return { ...trip, imageUrl };
   }
 }

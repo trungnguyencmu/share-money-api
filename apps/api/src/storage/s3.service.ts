@@ -26,7 +26,11 @@ export class S3Service {
       this.configService.get<string>('S3_IMAGES_BUCKET') ||
       this.configService.get<string>('S3_BUCKET_NAME') ||
       'share-money-images-dev';
-    this.s3Client = new S3Client({ region });
+    this.s3Client = new S3Client({
+      region,
+      requestChecksumCalculation: 'WHEN_REQUIRED',
+      responseChecksumValidation: 'WHEN_REQUIRED',
+    });
   }
 
   async generatePresignedUploadUrl(

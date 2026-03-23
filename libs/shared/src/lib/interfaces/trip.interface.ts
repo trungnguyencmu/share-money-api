@@ -5,4 +5,5 @@ export interface Trip {
   createdAt: string;
   isActive: boolean;
   inviteCode?: string;
+  imageS3Key?: string;
 }

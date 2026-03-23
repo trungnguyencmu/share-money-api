@@ -11,6 +11,16 @@ export class CreateTripDto {
   @IsNotEmpty()
   @MaxLength(100)
   tripName: string;
+
+  @ApiPropertyOptional({
+    description: 'S3 key of the trip cover image (from upload-url flow)',
+    example: 'trips/abc123/img-xyz/photo.jpg',
+    maxLength: 500,
+  })
+  @IsString()
+  @IsOptional()
+  @MaxLength(500)
+  imageS3Key?: string;
 }
 
 export class UpdateTripDto {
@@ -23,6 +33,16 @@ export class UpdateTripDto {
   @IsOptional()
   @MaxLength(100)
   tripName?: string;
+
+  @ApiPropertyOptional({
+    description: 'S3 key of the trip cover image (from upload-url flow)',
+    example: 'trips/abc123/img-xyz/photo.jpg',
+    maxLength: 500,
+  })
+  @IsString()
+  @IsOptional()
+  @MaxLength(500)
+  imageS3Key?: string;
 }
 
 export class TripResponseDto {
@@ -61,4 +81,10 @@ export class TripResponseDto {
     example: 'A3F1B2C4',
   })
   inviteCode?: string;
+
+  @ApiPropertyOptional({
+    description: 'Presigned URL for the trip cover image',
+    example: 'https://s3.amazonaws.com/...',
+  })
+  imageUrl?: string;
 }
