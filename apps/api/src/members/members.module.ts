@@ -4,10 +4,11 @@ import { DatabaseModule } from '../database/database.module';
 import { TripsModule } from '../trips/trips.module';
 import { MembersController } from './members.controller';
 import { MembersService } from './members.service';
+import { UserProfileController } from './user-profile.controller';
 
 @Module({
   imports: [DatabaseModule, TripsModule, AuthModule],
-  controllers: [MembersController],
+  controllers: [MembersController, UserProfileController],
   providers: [MembersService],
 })
 export class MembersModule {}

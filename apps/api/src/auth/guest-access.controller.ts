@@ -32,6 +32,28 @@ export class GuestAccessController {
   async joinTrip(@Body() dto: JoinTripDto): Promise<GuestTokenResponseDto> {
     const trip = await this.tripsService.findByInviteCode(dto.code);
 
+    // Check if guest with same displayName already exists in trip
+    const existingMember = await this.tripMembersRepository.findByTripIdAndDisplayName(
+      trip.tripId,
+      dto.displayName,
+    );
+
+    if (existingMember) {
+      const token = this.guestJwtTokenService.signGuestToken(
+        existingMember.userId,
+        trip.tripId,
+        dto.displayName,
+      );
+
+      return {
+        token,
+        tripId: trip.tripId,
+        userId: existingMember.userId,
+        displayName: existingMember.displayName,
+        expiresIn: 30 * 24 * 60 * 60, // 30 days in seconds
+      };
+    }
+
     const guestId = `guest-${randomUUID()}`;
 
     await this.tripMembersRepository.create({

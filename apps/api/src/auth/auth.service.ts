@@ -33,9 +33,9 @@ export class AuthService {
 
   async register(dto: RegisterDto): Promise<MessageResponseDto> {
     const userAttributes = [{ Name: 'email', Value: dto.email }];
-    if (dto.name) {
-      userAttributes.push({ Name: 'name', Value: dto.name });
-    }
+    // Use provided name, or derive from email (part before @)
+    const displayName = dto.name || dto.email.split('@')[0];
+    userAttributes.push({ Name: 'name', Value: displayName });
 
     try {
       await this.client.send(

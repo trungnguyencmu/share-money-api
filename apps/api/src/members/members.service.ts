@@ -53,6 +53,22 @@ export class MembersService {
     return this.tripMembersRepository.findByTripId(tripId);
   }
 
+  async updateDisplayName(userId: string, displayName: string) {
+    // Update displayName across all trips for this user
+    const memberships = await this.tripMembersRepository.findByUserId(userId);
+
+    await Promise.all(
+      memberships.map((m) =>
+        this.tripMembersRepository.updateDisplayName(m.tripId, userId, displayName),
+      ),
+    );
+
+    return {
+      userId,
+      displayName,
+    };
+  }
+
   async removeMember(
     tripId: string,
     ownerUserId: string,

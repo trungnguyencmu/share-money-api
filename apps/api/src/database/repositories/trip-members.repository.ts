@@ -62,6 +62,23 @@ export class TripMembersRepository {
     return members.map((m) => m.displayName).sort();
   }
 
+  async findByTripIdAndDisplayName(
+    tripId: string,
+    displayName: string,
+  ): Promise<TripMember | null> {
+    const members = await this.findByTripId(tripId);
+    return members.find((m) => m.displayName === displayName) ?? null;
+  }
+
+  async updateDisplayName(tripId: string, userId: string, displayName: string): Promise<void> {
+    await this.dynamodbService.update({
+      TableName: this.tableName,
+      Key: { tripId, userId },
+      UpdateExpression: 'SET displayName = :displayName',
+      ExpressionAttributeValues: { ':displayName': displayName },
+    });
+  }
+
   async delete(tripId: string, userId: string): Promise<void> {
     await this.dynamodbService.delete({
       TableName: this.tableName,

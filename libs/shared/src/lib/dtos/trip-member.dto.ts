@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString, MaxLength } from 'class-validator';
 
 export class AddTripMemberDto {
   @ApiProperty({
@@ -9,6 +9,18 @@ export class AddTripMemberDto {
   @IsEmail()
   @IsNotEmpty()
   email: string;
+}
+
+export class UpdateDisplayNameDto {
+  @ApiProperty({
+    description: 'New display name',
+    example: 'John Doe',
+    maxLength: 100,
+  })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(100)
+  displayName: string;
 }
 
 export class TripMemberResponseDto {
