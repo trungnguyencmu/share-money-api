@@ -1,327 +1,251 @@
 # Share Money API
 
-A robust REST API for managing shared expenses during trips, built with NestJS, AWS DynamoDB, and Cognito authentication.
+REST API for managing shared expenses during trips. Built with NestJS, AWS DynamoDB, Cognito, and deployed as serverless Lambda.
+
+**Production**: `https://ovb0x2eura.execute-api.ap-southeast-1.amazonaws.com`
 
 ## Features
 
-- **User Authentication**: AWS Cognito JWT-based authentication
-- **Trip Management**: Create and manage multiple expense-sharing trips
-- **Expense Tracking**: Add, update, and delete expenses with detailed information
-- **Participant Management**: Manage trip participants for accurate settlement calculations
-- **Automatic Settlement**: Calculate optimal transactions to settle debts using a greedy algorithm
-- **Secure Operations**: Password-protected deletion operations
-- **API Documentation**: Auto-generated Swagger/OpenAPI documentation
+- **Authentication**: AWS Cognito JWT (RS256)
+- **Trip Management**: Create and manage expense-sharing trips
+- **Expense Tracking**: CRUD expenses with payer validation
+- **Participant Management**: Add/remove trip participants
+- **Settlement**: Greedy algorithm calculates optimal debt settlement
+- **Secure Deletions**: Admin password required for delete operations
+- **API Docs**: Swagger UI at `/docs` (dev only)
 
 ## Tech Stack
 
-- **Framework**: NestJS 11.x
-- **Language**: TypeScript 5.x
+- **Runtime**: NestJS 11 / TypeScript 5 / Node.js 22
 - **Database**: AWS DynamoDB
-- **Authentication**: AWS Cognito
-- **Storage**: AWS S3 (optional, for future features)
-- **Documentation**: Swagger/OpenAPI
-- **Build System**: NX Monorepo
-- **Testing**: Jest
+- **Auth**: AWS Cognito (JWKS RS256)
+- **Deployment**: AWS Lambda + API Gateway (HTTP API)
+- **Infra**: CloudFormation (SAM)
+- **Build**: Nx Monorepo + Webpack
 
 ## Architecture
 
 ```
-share-money-api/
-├── apps/
-│   └── api/                    # Main NestJS application
-│       ├── src/
-│       │   ├── auth/          # Authentication (Cognito JWT)
-│       │   ├── database/      # DynamoDB service & repositories
-│       │   ├── trips/         # Trip management endpoints
-│       │   ├── expenses/      # Expense CRUD operations
-│       │   ├── participants/  # Participant management
-│       │   └── settlement/    # Settlement calculation
-│       └── ...
-├── libs/
-│   └── shared/                # Shared DTOs, interfaces, utilities
-│       ├── dtos/             # Data Transfer Objects
-│       ├── interfaces/       # TypeScript interfaces
-│       └── utils/            # Utility functions (calculations, ID generation)
-└── infrastructure/           # CloudFormation templates
-    └── dynamodb-tables.yaml # DynamoDB table definitions
+Client -> API Gateway (HTTPS) -> Lambda -> NestJS -> DynamoDB
+                                             |
+                                          Cognito (JWT validation)
 ```
 
-## Database Schema
+```
+share-money-api/
+├── apps/api/src/
+│   ├── auth/           # JWT strategy, guards, Cognito integration
+│   ├── database/       # DynamoDB service & repositories
+│   ├── trips/          # Trip CRUD
+│   ├── expenses/       # Expense CRUD + payer validation
+│   ├── participants/   # Participant management
+│   ├── settlement/     # Settlement calculation
+│   ├── app-factory.ts  # Shared app setup (used by main.ts and lambda.ts)
+│   ├── main.ts         # Local dev entry point
+│   └── lambda.ts       # AWS Lambda entry point
+├── libs/shared/src/
+│   ├── dtos/           # Request/response DTOs with validation
+│   ├── interfaces/     # TypeScript interfaces
+│   └── utils/          # Settlement calculator, ID generator
+├── infrastructure/
+│   ├── dynamodb-tables.yaml  # DynamoDB tables
+│   ├── cognito.yaml          # Cognito User Pool
+│   └── api-lambda.yaml       # Lambda + API Gateway
+└── scripts/
+    └── deploy-api.sh         # Build + deploy to AWS
+```
 
-### Tables
-
-#### 1. Trips Table
-- **Primary Key**: `tripId`
-- **GSI**: `UserId-CreatedAt-Index` (for querying trips by user)
-- **Attributes**: tripId, userId, tripName, createdAt, isActive
-
-#### 2. Expenses Table
-- **Primary Key**: `tripId` (PK) + `expenseId` (SK)
-- **GSI**: `TripId-CreatedAt-Index` (for sorting by date)
-- **Attributes**: tripId, expenseId, payer, title, amount, date, createdAt
-
-#### 3. Participants Table
-- **Primary Key**: `tripId` (PK) + `participantName` (SK)
-- **Attributes**: tripId, participantName, addedAt
-
-## Setup Instructions
-
-### Quick Start
-
-**New to AWS?** Follow our step-by-step guides:
-- 📖 **[AWS Quick Start Guide](AWS_QUICK_START.md)** - Get running in 30 minutes
-- 📚 **[Full Deployment Guide](DEPLOYMENT_GUIDE.md)** - Complete AWS setup and deployment
+## Quick Start
 
 ### Prerequisites
 
 - Node.js >= 22.17.0
-- npm >= 8.0.0
-- AWS Account with:
-  - DynamoDB access
-  - Cognito User Pool configured
-  - (Optional) S3 bucket for receipts
+- AWS CLI configured (`aws configure`)
+- AWS account with DynamoDB, Cognito, Lambda access
 
-### 1. Clone the Repository
+### 1. Install
 
 ```bash
 git clone <repository-url>
 cd share-money-api
-```
-
-### 2. Install Dependencies
-
-```bash
 npm install
 ```
 
-### 3. Configure Environment Variables
-
-Copy `.env.example` to `.env` and fill in your AWS credentials:
+### 2. Configure
 
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env`:
+Edit `.env` with your values. Key variables:
 
-```env
-# Application
-NODE_ENV=development
-PORT=3000
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `AWS_REGION` | AWS region | Yes |
+| `DYNAMODB_TRIPS_TABLE` | Trips table name | Yes |
+| `DYNAMODB_EXPENSES_TABLE` | Expenses table name | Yes |
+| `DYNAMODB_PARTICIPANTS_TABLE` | Participants table name | Yes |
+| `COGNITO_USER_POOL_ID` | Cognito User Pool ID | Yes |
+| `COGNITO_CLIENT_ID` | Cognito App Client ID | Yes |
+| `COGNITO_ISSUER` | Cognito issuer URL | Yes |
+| `ADMIN_PASSWORD` | Password for delete operations | Yes |
+| `CORS_ORIGIN` | Allowed CORS origins | Yes |
+| `JWT_SECRET` | Local dev only (HS256 fallback) | Dev only |
 
-# AWS Configuration
-AWS_REGION=ap-southeast-1
-AWS_ACCESS_KEY_ID=your_access_key
-AWS_SECRET_ACCESS_KEY=your_secret_key
+Note: `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` are not needed — the SDK uses the default credential chain (`aws configure`, IAM roles, etc.).
 
-# DynamoDB Tables
-DYNAMODB_TRIPS_TABLE=share-money-trips-dev
-DYNAMODB_EXPENSES_TABLE=share-money-expenses-dev
-DYNAMODB_PARTICIPANTS_TABLE=share-money-participants-dev
-
-# AWS Cognito
-COGNITO_USER_POOL_ID=your_user_pool_id
-COGNITO_CLIENT_ID=your_client_id
-COGNITO_REGION=ap-southeast-1
-COGNITO_ISSUER=https://cognito-idp.ap-southeast-1.amazonaws.com/your_user_pool_id
-
-# Security
-ADMIN_PASSWORD=ok
-
-# CORS
-CORS_ORIGIN=http://localhost:5173
-```
-
-### 4. Deploy DynamoDB Tables
+### 3. Deploy Infrastructure
 
 ```bash
-cd infrastructure
+# DynamoDB tables
 aws cloudformation deploy \
-  --template-file dynamodb-tables.yaml \
+  --template-file infrastructure/dynamodb-tables.yaml \
   --stack-name share-money-dynamodb-dev \
+  --parameter-overrides Environment=dev \
+  --region ap-southeast-1
+
+# Cognito User Pool
+aws cloudformation deploy \
+  --template-file infrastructure/cognito.yaml \
+  --stack-name share-money-cognito-dev \
   --parameter-overrides Environment=dev \
   --region ap-southeast-1
 ```
 
-### 5. Run the Application
+### 4. Run Locally
 
-#### Development Mode
 ```bash
-npm run serve
+npx nx serve api
 ```
 
-#### Production Build
+API at `http://localhost:3000`, Swagger at `http://localhost:3000/docs`.
+
+### 5. Deploy to Production
+
 ```bash
-npm run build
-npm start
+bash scripts/deploy-api.sh dev
 ```
 
-The API will be available at `http://localhost:3000`
+This builds the Lambda bundle, uploads to S3, and deploys via CloudFormation. Outputs the API Gateway URL.
 
 ## API Endpoints
 
+All endpoints except `GET /` require `Authorization: Bearer <JWT>` header.
+
 ### Health Check
-- `GET /` - API status (public endpoint)
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/` | Public | API status |
 
 ### Trips
-- `POST /trips` - Create a new trip
-- `GET /trips` - Get all trips for current user
-- `GET /trips/:id` - Get trip by ID
-- `PATCH /trips/:id` - Update trip
-- `DELETE /trips/:id` - Delete trip (soft delete)
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/trips` | JWT | Create trip |
+| GET | `/trips` | JWT | List user's trips |
+| GET | `/trips/:id` | JWT | Get trip |
+| PATCH | `/trips/:id` | JWT | Update trip |
+| DELETE | `/trips/:id` | JWT | Soft delete trip |
 
 ### Expenses
-- `POST /trips/:tripId/expenses` - Create expense
-- `GET /trips/:tripId/expenses` - Get all expenses for a trip
-- `GET /trips/:tripId/expenses/:id` - Get expense by ID
-- `PATCH /trips/:tripId/expenses/:id` - Update expense
-- `DELETE /trips/:tripId/expenses/:id` - Delete expense (requires password)
-- `DELETE /trips/:tripId/expenses` - Delete all expenses (requires password)
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/trips/:tripId/expenses` | JWT | Create expense |
+| GET | `/trips/:tripId/expenses` | JWT | List expenses |
+| GET | `/trips/:tripId/expenses/:id` | JWT | Get expense |
+| PATCH | `/trips/:tripId/expenses/:id` | JWT | Update expense |
+| DELETE | `/trips/:tripId/expenses/:id` | JWT + `X-Admin-Password` | Delete expense |
+| DELETE | `/trips/:tripId/expenses` | JWT + `X-Admin-Password` | Delete all expenses |
 
 ### Participants
-- `POST /trips/:tripId/participants` - Add participant
-- `GET /trips/:tripId/participants` - Get all participants
-- `GET /trips/:tripId/participants/names` - Get participant names (for dropdowns)
-- `DELETE /trips/:tripId/participants/:name` - Remove participant
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/trips/:tripId/participants` | JWT | Add participant |
+| GET | `/trips/:tripId/participants` | JWT | List participants |
+| GET | `/trips/:tripId/participants/names` | JWT | Get names only |
+| DELETE | `/trips/:tripId/participants/:name` | JWT | Remove participant |
 
 ### Settlement
-- `GET /trips/:tripId/settlement` - Calculate settlement (balances + transactions)
-
-## API Documentation
-
-Once the server is running, visit:
-- **Swagger UI**: `http://localhost:3000/docs`
-- **OpenAPI JSON**: `http://localhost:3000/docs-json`
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/trips/:tripId/settlement` | JWT | Calculate settlement |
 
 ## Authentication
 
-All endpoints (except `GET /`) require JWT authentication via AWS Cognito.
+Authentication is handled by AWS Cognito. The API validates JWTs — it does not provide login/register endpoints.
 
-### Getting a JWT Token
+### Flow
 
-1. Sign up/sign in through your Cognito User Pool
-2. Obtain the JWT `id_token`
-3. Include in requests:
+1. User signs up/logs in via Cognito Hosted UI or AWS SDK
+2. Frontend receives JWT `id_token`
+3. Frontend sends requests with `Authorization: Bearer <token>`
+4. API validates JWT against Cognito JWKS (RS256)
 
-```bash
-curl -H "Authorization: Bearer YOUR_JWT_TOKEN" \
-  http://localhost:3000/trips
-```
-
-## Testing
+### Testing with CLI
 
 ```bash
-# Unit tests
-npm test
+# Get token
+ID_TOKEN=$(aws cognito-idp admin-initiate-auth \
+  --user-pool-id <POOL_ID> \
+  --client-id <CLIENT_ID> \
+  --auth-flow ADMIN_USER_PASSWORD_AUTH \
+  --auth-parameters USERNAME=user@example.com,PASSWORD='YourPass123' \
+  --region ap-southeast-1 \
+  --query 'AuthenticationResult.IdToken' --output text)
 
-# E2E tests
-npm run test:e2e
-
-# Test coverage
-npm run test:cov
+# Use token
+curl -H "Authorization: Bearer $ID_TOKEN" https://your-api-url/trips
 ```
+
+## AWS Infrastructure
+
+All infrastructure is defined as CloudFormation templates in `infrastructure/`:
+
+| Stack | Template | Resources |
+|-------|----------|-----------|
+| `share-money-dynamodb-dev` | `dynamodb-tables.yaml` | 3 DynamoDB tables with GSIs |
+| `share-money-cognito-dev` | `cognito.yaml` | User Pool, App Client, Hosted UI domain |
+| `share-money-api-dev` | `api-lambda.yaml` | Lambda function, HTTP API Gateway, IAM role |
+
+Region: `ap-southeast-1`
 
 ## Development
 
-### Build the API
 ```bash
-npm run build
+# Local dev server (hot reload)
+npx nx serve api
+
+# Build
+npx nx build api
+
+# Build Lambda bundle
+npx nx build-lambda api
+
+# Lint
+npx nx lint api
 ```
-
-### Lint the code
-```bash
-npm run lint
-```
-
-### Format code
-```bash
-npx prettier --write .
-```
-
-## Project Structure
-
-### Shared Library (`libs/shared`)
-Contains reusable code:
-- **DTOs**: Validation and API contracts
-- **Interfaces**: TypeScript type definitions
-- **Utils**: Settlement calculations, ID generation
-
-### API Application (`apps/api`)
-NestJS modules following Clean Architecture:
-- **Auth Module**: JWT strategy and guards
-- **Database Module**: DynamoDB service and repositories
-- **Feature Modules**: Trips, Expenses, Participants, Settlement
 
 ## Settlement Algorithm
 
-The settlement calculation uses a **greedy algorithm** to minimize transactions:
+Greedy algorithm to minimize transactions:
 
 1. Calculate each member's balance (paid - share)
-2. Separate members into debtors (negative balance) and creditors (positive balance)
-3. Sort both groups by amount (descending)
+2. Separate into debtors (negative) and creditors (positive)
+3. Sort both by amount descending
 4. Match largest debtor with largest creditor
-5. Repeat until all debts settled
+5. Repeat until settled
 
-This approach typically produces N-1 transactions for N participants.
+Produces at most N-1 transactions for N participants. Amounts rounded to integers (VND currency).
 
-## Security Features
+## Security
 
-- **JWT Authentication**: All routes protected except health check
-- **Row-Level Security**: Users can only access their own trips
-- **Password Protection**: Deletion operations require password
-- **Input Validation**: All DTOs validated with class-validator
-- **CORS**: Configurable allowed origins
-
-## Deployment
-
-### AWS Lambda (Serverless)
-The API can be deployed to AWS Lambda using the Serverless framework (configuration needed).
-
-### Docker
-```bash
-docker build -t share-money-api .
-docker run -p 3000:3000 --env-file .env share-money-api
-```
-
-### Traditional Server
-Deploy the built application to any Node.js hosting provider.
-
-## Migration from Google Sheets
-
-To migrate existing data:
-1. Export Google Sheets data to JSON
-2. Use the API to create trips and expenses
-3. Update your frontend to use the new API endpoints
-
-## Environment Variables Reference
-
-| Variable | Description | Required |
-|----------|-------------|----------|
-| NODE_ENV | Environment (development/production) | Yes |
-| PORT | Server port | Yes |
-| AWS_REGION | AWS region | Yes |
-| AWS_ACCESS_KEY_ID | AWS access key | Yes |
-| AWS_SECRET_ACCESS_KEY | AWS secret key | Yes |
-| DYNAMODB_TRIPS_TABLE | Trips table name | Yes |
-| DYNAMODB_EXPENSES_TABLE | Expenses table name | Yes |
-| DYNAMODB_PARTICIPANTS_TABLE | Participants table name | Yes |
-| COGNITO_USER_POOL_ID | Cognito user pool ID | Yes |
-| COGNITO_CLIENT_ID | Cognito client ID | Yes |
-| ADMIN_PASSWORD | Password for deletions | Yes |
-| CORS_ORIGIN | Allowed CORS origins | Yes |
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Run tests and linting
-5. Submit a pull request
+- Global JWT auth guard (all routes except `GET /`)
+- Row-level security: users only see their own trips
+- Admin password for delete operations (timing-safe comparison)
+- Input validation via class-validator with whitelist mode
+- Helmet security headers
+- CORS with configurable origins
+- IAM least-privilege for Lambda execution role
 
 ## License
 
 MIT
-
-## Support
-
-For issues and questions, please create an issue in the GitHub repository.
