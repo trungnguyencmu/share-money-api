@@ -83,22 +83,16 @@ export class ExpensesController {
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Delete expense (requires admin password header)' })
-  @ApiHeader({ name: 'x-admin-password', description: 'Admin password for deletion authorization', required: true })
+  @ApiOperation({ summary: 'Delete expense' })
   @ApiResponse({ status: 200, description: 'Expense deleted successfully' })
-  @ApiResponse({ status: 400, description: 'Missing x-admin-password header' })
-  @ApiResponse({ status: 401, description: 'Unauthorized or invalid password' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Expense not found' })
   async remove(
     @Param('tripId') tripId: string,
     @Param('id') id: string,
-    @CurrentUser() user: CurrentUserData,
-    @Headers('x-admin-password') password: string
+    @CurrentUser() user: CurrentUserData
   ): Promise<void> {
-    if (!password) {
-      throw new BadRequestException('x-admin-password header is required');
-    }
-    await this.expensesService.remove(tripId, id, user.userId, password);
+    await this.expensesService.remove(tripId, id, user.userId);
   }
 
   @Delete()

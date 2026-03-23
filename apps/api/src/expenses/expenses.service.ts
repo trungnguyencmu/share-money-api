@@ -89,12 +89,8 @@ export class ExpensesService {
     return this.expensesRepository.update(tripId, expenseId, updateExpenseDto);
   }
 
-  async remove(tripId: string, expenseId: string, userId: string, password: string) {
+  async remove(tripId: string, expenseId: string, userId: string) {
     await this.tripsService.verifyAccess(tripId, userId);
-
-    if (!this.verifyPassword(password)) {
-      throw new UnauthorizedException('Invalid password');
-    }
 
     const expense = await this.expensesRepository.findById(tripId, expenseId);
     if (!expense) {
