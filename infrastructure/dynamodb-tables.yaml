@@ -163,6 +163,45 @@ Resources:
         - Key: Environment
           Value: !Ref Environment
 
+  # Images Table
+  ImagesTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub 'share-money-images-${Environment}'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: tripId
+          AttributeType: S
+        - AttributeName: imageId
+          AttributeType: S
+        - AttributeName: createdAt
+          AttributeType: S
+      KeySchema:
+        - AttributeName: tripId
+          KeyType: HASH
+        - AttributeName: imageId
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: TripId-CreatedAt-Index
+          KeySchema:
+            - AttributeName: tripId
+              KeyType: HASH
+            - AttributeName: createdAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      Tags:
+        - Key: Application
+          Value: ShareMoney
+        - Key: Environment
+          Value: !Ref Environment
+
 Outputs:
   TripsTableName:
     Description: Name of the Trips table
@@ -211,3 +250,15 @@ Outputs:
     Value: !GetAtt TripMembersTable.Arn
     Export:
       Name: !Sub '${AWS::StackName}-TripMembersTableArn'
+
+  ImagesTableName:
+    Description: Name of the Images table
+    Value: !Ref ImagesTable
+    Export:
+      Name: !Sub '${AWS::StackName}-ImagesTable'
+
+  ImagesTableArn:
+    Description: ARN of the Images table
+    Value: !GetAtt ImagesTable.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-ImagesTableArn'

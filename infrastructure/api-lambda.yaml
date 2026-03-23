@@ -46,6 +46,10 @@ Parameters:
     NoEcho: true
     Description: Secret for signing guest JWT tokens
 
+  ImagesBucketName:
+    Type: String
+    Description: S3 bucket name for trip images
+
 Globals:
   Function:
     Timeout: 30
@@ -75,6 +79,8 @@ Resources:
           CORS_ORIGIN: !Ref CorsOrigin
           ADMIN_PASSWORD: !Ref AdminPassword
           GUEST_JWT_SECRET: !Ref GuestJwtSecret
+          DYNAMODB_IMAGES_TABLE: !Sub 'share-money-images-${Environment}'
+          S3_IMAGES_BUCKET: !Ref ImagesBucketName
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Sub 'share-money-trips-${Environment}'
@@ -84,6 +90,16 @@ Resources:
             TableName: !Sub 'share-money-participants-${Environment}'
         - DynamoDBCrudPolicy:
             TableName: !Sub 'share-money-trip-members-${Environment}'
+        - DynamoDBCrudPolicy:
+            TableName: !Sub 'share-money-images-${Environment}'
+        - Statement:
+            - Effect: Allow
+              Action:
+                - s3:PutObject
+                - s3:GetObject
+                - s3:DeleteObject
+              Resource:
+                - !Sub 'arn:aws:s3:::${ImagesBucketName}/*'
         - Statement:
             - Effect: Allow
               Action:

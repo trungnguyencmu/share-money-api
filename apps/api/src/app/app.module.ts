@@ -6,6 +6,7 @@ import { AuthModule } from '../auth/auth.module';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { DatabaseModule } from '../database/database.module';
 import { ExpensesModule } from '../expenses/expenses.module';
+import { ImagesModule } from '../images/images.module';
 import { MembersModule } from '../members/members.module';
 import { SettlementModule } from '../settlement/settlement.module';
 import { TripsModule } from '../trips/trips.module';
@@ -22,6 +23,7 @@ import { AppService } from './app.service';
     DatabaseModule,
     TripsModule,
     ExpensesModule,
+    ImagesModule,
     MembersModule,
     SettlementModule,
   ],

@@ -12,6 +12,10 @@ export function generateInviteCode(): string {
   return randomBytes(4).toString('hex').toUpperCase();
 }
 
+export function generateImageId(): string {
+  return `img-${randomUUID()}`;
+}
+
 export function generateTimestamp(): string {
   return new Date().toISOString();
 }
