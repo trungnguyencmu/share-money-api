@@ -1,0 +1,13 @@
+import { Module } from '@nestjs/common';
+import { AuthModule } from '../auth/auth.module';
+import { DatabaseModule } from '../database/database.module';
+import { TripsModule } from '../trips/trips.module';
+import { MembersController } from './members.controller';
+import { MembersService } from './members.service';
+
+@Module({
+  imports: [DatabaseModule, TripsModule, AuthModule],
+  controllers: [MembersController],
+  providers: [MembersService],
+})
+export class MembersModule {}

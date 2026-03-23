@@ -71,6 +71,15 @@ export class TripsRepository {
   }
 
   /**
+   * Find multiple trips by IDs
+   */
+  async findByIds(tripIds: string[]): Promise<Trip[]> {
+    if (tripIds.length === 0) return [];
+    const results = await Promise.all(tripIds.map((id) => this.findById(id)));
+    return results.filter((t): t is Trip => t !== null);
+  }
+
+  /**
    * Update trip
    */
   async update(tripId: string, updates: Partial<Trip>): Promise<Trip> {

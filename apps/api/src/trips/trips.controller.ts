@@ -18,7 +18,7 @@ export class TripsController {
     @CurrentUser() user: CurrentUserData,
     @Body() createTripDto: CreateTripDto
   ): Promise<TripResponseDto> {
-    return this.tripsService.create(user.userId, createTripDto);
+    return this.tripsService.create(user.userId, createTripDto, user.email, user.username);
   }
 
   @Get()

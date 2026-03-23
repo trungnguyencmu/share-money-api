@@ -5,41 +5,34 @@ import {
   SettlementResult,
 } from '@share-money/shared';
 import { ExpensesRepository } from '../database/repositories/expenses.repository';
-import { ParticipantsRepository } from '../database/repositories/participants.repository';
+import { TripMembersRepository } from '../database/repositories/trip-members.repository';
 import { TripsService } from '../trips/trips.service';
 
 @Injectable()
 export class SettlementService {
   constructor(
     private readonly expensesRepository: ExpensesRepository,
-    private readonly participantsRepository: ParticipantsRepository,
-    private readonly tripsService: TripsService
+    private readonly tripMembersRepository: TripMembersRepository,
+    private readonly tripsService: TripsService,
   ) {}
 
   async calculateSettlement(tripId: string, userId: string): Promise<SettlementResult> {
-    // Verify user has access to this trip
-    await this.tripsService.verifyOwnership(tripId, userId);
+    await this.tripsService.verifyAccess(tripId, userId);
 
-    // Get all expenses for the trip
-    const expenses = await this.expensesRepository.findByTripId(tripId);
+    const [expenses, memberNames] = await Promise.all([
+      this.expensesRepository.findByTripId(tripId),
+      this.tripMembersRepository.getMemberDisplayNames(tripId),
+    ]);
 
-    // Get participant names
-    const participantNames = await this.participantsRepository.getParticipantNames(tripId);
-
-    // Calculate balances
-    const balances = calculateBalances(expenses, participantNames);
-
-    // Calculate optimal transactions
+    const balances = calculateBalances(expenses, memberNames);
     const transactions = calculateTransactions(balances);
-
-    // Calculate totals
     const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
 
     return {
       balances,
       transactions,
       totalExpenses,
-      participantCount: participantNames.length || balances.length,
+      participantCount: memberNames.length || balances.length,
     };
   }
 }

@@ -116,6 +116,45 @@ Resources:
         - Key: Environment
           Value: !Ref Environment
 
+  # Trip Members Table
+  TripMembersTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub 'share-money-trip-members-${Environment}'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: tripId
+          AttributeType: S
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: joinedAt
+          AttributeType: S
+      KeySchema:
+        - AttributeName: tripId
+          KeyType: HASH
+        - AttributeName: userId
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: UserId-JoinedAt-Index
+          KeySchema:
+            - AttributeName: userId
+              KeyType: HASH
+            - AttributeName: joinedAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      Tags:
+        - Key: Application
+          Value: ShareMoney
+        - Key: Environment
+          Value: !Ref Environment
+
 Outputs:
   TripsTableName:
     Description: Name of the Trips table
@@ -152,3 +191,15 @@ Outputs:
     Value: !GetAtt ParticipantsTable.Arn
     Export:
       Name: !Sub '${AWS::StackName}-ParticipantsTableArn'
+
+  TripMembersTableName:
+    Description: Name of the Trip Members table
+    Value: !Ref TripMembersTable
+    Export:
+      Name: !Sub '${AWS::StackName}-TripMembersTable'
+
+  TripMembersTableArn:
+    Description: ARN of the Trip Members table
+    Value: !GetAtt TripMembersTable.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-TripMembersTableArn'

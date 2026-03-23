@@ -13,7 +13,7 @@ import {
   generateTimestamp,
 } from '@share-money/shared';
 import { ExpensesRepository } from '../database/repositories/expenses.repository';
-import { ParticipantsRepository } from '../database/repositories/participants.repository';
+import { TripMembersRepository } from '../database/repositories/trip-members.repository';
 import { TripsService } from '../trips/trips.service';
 
 @Injectable()
@@ -22,9 +22,9 @@ export class ExpensesService {
 
   constructor(
     private readonly expensesRepository: ExpensesRepository,
-    private readonly participantsRepository: ParticipantsRepository,
+    private readonly tripMembersRepository: TripMembersRepository,
     private readonly tripsService: TripsService,
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
   ) {
     const password = this.configService.get<string>('ADMIN_PASSWORD');
     if (!password || password === 'ok' || password === 'CHANGE_ME_strong_password') {
@@ -32,7 +32,7 @@ export class ExpensesService {
       if (nodeEnv === 'production') {
         throw new Error(
           'ADMIN_PASSWORD must be set to a strong value in production. ' +
-          'Do not use default or placeholder values.'
+          'Do not use default or placeholder values.',
         );
       }
     }
@@ -40,7 +40,7 @@ export class ExpensesService {
   }
 
   async create(tripId: string, userId: string, createExpenseDto: CreateExpenseDto) {
-    await this.tripsService.verifyOwnership(tripId, userId);
+    await this.tripsService.verifyAccess(tripId, userId);
     await this.validatePayer(tripId, createExpenseDto.payer);
 
     const expense = {
@@ -54,15 +54,14 @@ export class ExpensesService {
   }
 
   async findAll(tripId: string, userId: string) {
-    await this.tripsService.verifyOwnership(tripId, userId);
+    await this.tripsService.verifyAccess(tripId, userId);
     return this.expensesRepository.findByTripId(tripId);
   }
 
   async findOne(tripId: string, expenseId: string, userId: string) {
-    await this.tripsService.verifyOwnership(tripId, userId);
+    await this.tripsService.verifyAccess(tripId, userId);
 
     const expense = await this.expensesRepository.findById(tripId, expenseId);
-
     if (!expense) {
       throw new NotFoundException(`Expense with ID ${expenseId} not found`);
     }
@@ -74,12 +73,11 @@ export class ExpensesService {
     tripId: string,
     expenseId: string,
     userId: string,
-    updateExpenseDto: UpdateExpenseDto
+    updateExpenseDto: UpdateExpenseDto,
   ) {
-    await this.tripsService.verifyOwnership(tripId, userId);
+    await this.tripsService.verifyAccess(tripId, userId);
 
     const expense = await this.expensesRepository.findById(tripId, expenseId);
-
     if (!expense) {
       throw new NotFoundException(`Expense with ID ${expenseId} not found`);
     }
@@ -92,14 +90,13 @@ export class ExpensesService {
   }
 
   async remove(tripId: string, expenseId: string, userId: string, password: string) {
-    await this.tripsService.verifyOwnership(tripId, userId);
+    await this.tripsService.verifyAccess(tripId, userId);
 
     if (!this.verifyPassword(password)) {
       throw new UnauthorizedException('Invalid password');
     }
 
     const expense = await this.expensesRepository.findById(tripId, expenseId);
-
     if (!expense) {
       throw new NotFoundException(`Expense with ID ${expenseId} not found`);
     }
@@ -108,7 +105,7 @@ export class ExpensesService {
   }
 
   async removeAll(tripId: string, userId: string, password: string) {
-    await this.tripsService.verifyOwnership(tripId, userId);
+    await this.tripsService.verifyAccess(tripId, userId);
 
     if (!this.verifyPassword(password)) {
       throw new UnauthorizedException('Invalid password');
@@ -118,15 +115,15 @@ export class ExpensesService {
   }
 
   private async validatePayer(tripId: string, payer: string): Promise<void> {
-    const names = await this.participantsRepository.getParticipantNames(tripId);
+    const names = await this.tripMembersRepository.getMemberDisplayNames(tripId);
     const match = names.some(
-      (name) => name.toLowerCase() === payer.trim().toLowerCase()
+      (name) => name.toLowerCase() === payer.trim().toLowerCase(),
     );
 
     if (!match) {
       throw new BadRequestException(
-        `Payer "${payer}" is not a participant in this trip. ` +
-        `Available participants: ${names.join(', ') || '(none)'}`
+        `Payer "${payer}" is not a member of this trip. ` +
+        `Members: ${names.join(', ') || '(none)'}`,
       );
     }
   }

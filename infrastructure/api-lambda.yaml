@@ -62,6 +62,7 @@ Resources:
           DYNAMODB_TRIPS_TABLE: !Sub 'share-money-trips-${Environment}'
           DYNAMODB_EXPENSES_TABLE: !Sub 'share-money-expenses-${Environment}'
           DYNAMODB_PARTICIPANTS_TABLE: !Sub 'share-money-participants-${Environment}'
+          DYNAMODB_TRIP_MEMBERS_TABLE: !Sub 'share-money-trip-members-${Environment}'
           COGNITO_USER_POOL_ID: !Ref CognitoUserPoolId
           COGNITO_CLIENT_ID: !Ref CognitoClientId
           COGNITO_REGION: !Ref CognitoRegion
@@ -75,6 +76,13 @@ Resources:
             TableName: !Sub 'share-money-expenses-${Environment}'
         - DynamoDBCrudPolicy:
             TableName: !Sub 'share-money-participants-${Environment}'
+        - DynamoDBCrudPolicy:
+            TableName: !Sub 'share-money-trip-members-${Environment}'
+        - Statement:
+            - Effect: Allow
+              Action:
+                - cognito-idp:ListUsers
+              Resource: !Sub 'arn:aws:cognito-idp:${CognitoRegion}:${AWS::AccountId}:userpool/${CognitoUserPoolId}'
       Events:
         RootPath:
           Type: HttpApi

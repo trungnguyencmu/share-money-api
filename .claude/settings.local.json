@@ -23,7 +23,10 @@
       "Bash(echo \"$ID_TOKEN\")",
       "Bash(python3 -m json.tool)",
       "Bash(echo \"EXIT:$?\")",
-      "Bash(git:*)"
+      "Bash(git:*)",
+      "Bash(chmod:*)",
+      "Bash(bash scripts/deploy-api.sh dev 2>&1)",
+      "Bash(aws logs:*)"
     ],
     "deny": [],
     "ask": []
