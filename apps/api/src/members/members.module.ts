@@ -5,10 +5,11 @@ import { TripsModule } from '../trips/trips.module';
 import { MembersController } from './members.controller';
 import { MembersService } from './members.service';
 import { UserProfileController } from './user-profile.controller';
+import { UsersSearchController } from './users-search.controller';
 
 @Module({
   imports: [DatabaseModule, TripsModule, AuthModule],
-  controllers: [MembersController, UserProfileController],
+  controllers: [MembersController, UserProfileController, UsersSearchController],
   providers: [MembersService],
 })
 export class MembersModule {}

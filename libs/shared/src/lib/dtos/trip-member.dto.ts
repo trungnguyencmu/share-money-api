@@ -1,5 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsString,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 
 export class AddTripMemberDto {
   @ApiProperty({
@@ -20,6 +26,30 @@ export class UpdateDisplayNameDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(100)
+  displayName: string;
+}
+
+export class SearchUsersQueryDto {
+  @ApiProperty({
+    description: 'Search by email or display name prefix (min 3 characters)',
+    example: 'john',
+    minLength: 3,
+  })
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(3)
+  @MaxLength(100)
+  query: string;
+}
+
+export class UserSearchResultDto {
+  @ApiProperty({ description: 'User ID' })
+  userId: string;
+
+  @ApiProperty({ description: 'Email address' })
+  email: string;
+
+  @ApiProperty({ description: 'Display name' })
   displayName: string;
 }
 
