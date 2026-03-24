@@ -12,6 +12,7 @@ import {
   generateExpenseId,
   generateTimestamp,
 } from '@share-money/shared';
+import { BillsRepository } from '../database/repositories/bills.repository';
 import { ExpensesRepository } from '../database/repositories/expenses.repository';
 import { TripMembersRepository } from '../database/repositories/trip-members.repository';
 import { TripsService } from '../trips/trips.service';
@@ -22,6 +23,7 @@ export class ExpensesService {
 
   constructor(
     private readonly expensesRepository: ExpensesRepository,
+    private readonly billsRepository: BillsRepository,
     private readonly tripMembersRepository: TripMembersRepository,
     private readonly tripsService: TripsService,
     private readonly configService: ConfigService,
@@ -43,10 +45,35 @@ export class ExpensesService {
     await this.tripsService.verifyAccess(tripId, userId);
     await this.validatePayer(tripId, createExpenseDto.payer);
 
+    let amount = createExpenseDto.amount;
+    let date = createExpenseDto.date;
+    let billId = createExpenseDto.billId;
+
+    if (billId) {
+      const bill = await this.billsRepository.findById(tripId, billId);
+      if (!bill) {
+        throw new NotFoundException(`Bill with ID ${billId} not found in this trip`);
+      }
+      amount = amount ?? bill.totalAmount;
+      date = date ?? bill.billDate;
+      billId = bill.billId;
+    }
+
+    if (!amount) {
+      throw new BadRequestException('Amount is required. Provide amount or billId.');
+    }
+    if (!date) {
+      throw new BadRequestException('Date is required. Provide date or billId.');
+    }
+
     const expense = {
       tripId,
       expenseId: generateExpenseId(),
-      ...createExpenseDto,
+      payer: createExpenseDto.payer,
+      title: createExpenseDto.title,
+      amount,
+      date,
+      billId,
       createdAt: generateTimestamp(),
     };
 

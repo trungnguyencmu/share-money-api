@@ -6,4 +6,5 @@ export interface Expense {
   amount: number;
   date: string;
   createdAt: string;
+  billId?: string;
 }

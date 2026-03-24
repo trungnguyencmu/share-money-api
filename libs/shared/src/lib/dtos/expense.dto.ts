@@ -30,21 +30,31 @@ export class CreateExpenseDto {
   @MaxLength(200)
   title: string;
 
-  @ApiProperty({
-    description: 'Amount in VND (must be positive)',
+  @ApiPropertyOptional({
+    description: 'Amount in VND (must be positive). If billId is provided, this is optional.',
     example: 500000,
     minimum: 1,
   })
   @IsNumber()
+  @IsOptional()
   @IsPositive()
-  amount: number;
+  amount?: number;
 
-  @ApiProperty({
-    description: 'Date of expense (ISO 8601)',
+  @ApiPropertyOptional({
+    description: 'Date of expense (ISO 8601). If billId is provided, this is auto-filled.',
     example: '2025-01-05',
   })
   @IsDateString()
-  date: string;
+  @IsOptional()
+  date?: string;
+
+  @ApiPropertyOptional({
+    description: 'Bill ID from scan-bill to auto-fill amount and date',
+    example: 'bill-550e8400-e29b-41d4-a716-446655440000',
+  })
+  @IsString()
+  @IsOptional()
+  billId?: string;
 }
 
 export class UpdateExpenseDto {
@@ -129,4 +139,10 @@ export class ExpenseResponseDto {
     example: '2025-01-05T10:30:00.000Z',
   })
   createdAt: string;
+
+  @ApiPropertyOptional({
+    description: 'Bill ID used to create this expense (if any)',
+    example: 'bill-550e8400-e29b-41d4-a716-446655440000',
+  })
+  billId?: string;
 }
