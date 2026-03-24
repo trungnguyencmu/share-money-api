@@ -80,6 +80,7 @@ Resources:
           ADMIN_PASSWORD: !Ref AdminPassword
           GUEST_JWT_SECRET: !Ref GuestJwtSecret
           DYNAMODB_IMAGES_TABLE: !Sub 'share-money-images-${Environment}'
+          DYNAMODB_BILLS_TABLE: !Sub 'share-money-bills-${Environment}'
           S3_IMAGES_BUCKET: !Ref ImagesBucketName
       Policies:
         - DynamoDBCrudPolicy:
@@ -92,6 +93,8 @@ Resources:
             TableName: !Sub 'share-money-trip-members-${Environment}'
         - DynamoDBCrudPolicy:
             TableName: !Sub 'share-money-images-${Environment}'
+        - DynamoDBCrudPolicy:
+            TableName: !Sub 'share-money-bills-${Environment}'
         - Statement:
             - Effect: Allow
               Action:
