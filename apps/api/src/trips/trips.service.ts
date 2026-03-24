@@ -143,10 +143,34 @@ export class TripsService {
       ? await this.s3Service.generatePresignedGetUrl(trip.imageS3Key)
       : undefined;
 
+    const status = this.calculateStatus(trip);
+
     return {
       ...trip,
       memberCount: trip.memberCount ?? 0,
+      status,
       imageUrl,
     };
+  }
+
+  private calculateStatus(trip: Trip): 'active' | 'upcoming' | 'settled' {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (trip.startDate) {
+      const startDate = new Date(trip.startDate);
+      if (startDate > today) {
+        return 'upcoming';
+      }
+    }
+
+    if (trip.endDate) {
+      const endDate = new Date(trip.endDate);
+      if (endDate < today) {
+        return 'settled';
+      }
+    }
+
+    return 'active';
   }
 }
