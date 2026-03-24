@@ -108,6 +108,11 @@ Resources:
               Action:
                 - cognito-idp:ListUsers
               Resource: !Sub 'arn:aws:cognito-idp:${CognitoRegion}:${AWS::AccountId}:userpool/${CognitoUserPoolId}'
+        - Statement:
+            - Effect: Allow
+              Action:
+                - textract:AnalyzeExpense
+              Resource: '*'
       Events:
         RootPath:
           Type: HttpApi
