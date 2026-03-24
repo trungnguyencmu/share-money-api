@@ -8,6 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import { timingSafeEqual } from 'crypto';
 import {
   CreateExpenseDto,
+  Expense,
   UpdateExpenseDto,
   generateExpenseId,
   generateTimestamp,
@@ -15,6 +16,7 @@ import {
 import { BillsRepository } from '../database/repositories/bills.repository';
 import { ExpensesRepository } from '../database/repositories/expenses.repository';
 import { TripMembersRepository } from '../database/repositories/trip-members.repository';
+import { S3Service } from '../storage/s3.service';
 import { TripsService } from '../trips/trips.service';
 
 @Injectable()
@@ -26,6 +28,7 @@ export class ExpensesService {
     private readonly billsRepository: BillsRepository,
     private readonly tripMembersRepository: TripMembersRepository,
     private readonly tripsService: TripsService,
+    private readonly s3Service: S3Service,
     private readonly configService: ConfigService,
   ) {
     const password = this.configService.get<string>('ADMIN_PASSWORD');
@@ -82,7 +85,8 @@ export class ExpensesService {
 
   async findAll(tripId: string, userId: string) {
     await this.tripsService.verifyAccess(tripId, userId);
-    return this.expensesRepository.findByTripId(tripId);
+    const expenses = await this.expensesRepository.findByTripId(tripId);
+    return Promise.all(expenses.map((e) => this.attachBillImageUrl(tripId, e)));
   }
 
   async findOne(tripId: string, expenseId: string, userId: string) {
@@ -93,7 +97,7 @@ export class ExpensesService {
       throw new NotFoundException(`Expense with ID ${expenseId} not found`);
     }
 
-    return expense;
+    return this.attachBillImageUrl(tripId, expense);
   }
 
   async update(
@@ -158,5 +162,19 @@ export class ExpensesService {
       return false;
     }
     return timingSafeEqual(expected, actual);
+  }
+
+  private async attachBillImageUrl(tripId: string, expense: Expense): Promise<Expense & { billImageUrl?: string }> {
+    if (!expense.billId) {
+      return expense;
+    }
+
+    const bill = await this.billsRepository.findById(tripId, expense.billId);
+    if (!bill) {
+      return expense;
+    }
+
+    const billImageUrl = await this.s3Service.generatePresignedGetUrl(bill.s3Key);
+    return { ...expense, billImageUrl };
   }
 }

@@ -145,4 +145,10 @@ export class ExpenseResponseDto {
     example: 'bill-550e8400-e29b-41d4-a716-446655440000',
   })
   billId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Presigned URL to view the bill image (expires in 15 min)',
+    example: 'https://s3.amazonaws.com/...',
+  })
+  billImageUrl?: string;
 }
