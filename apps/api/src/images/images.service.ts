@@ -80,7 +80,9 @@ export class ImagesService {
     await this.tripsService.verifyAccess(tripId, userId);
 
     const images = await this.imagesRepository.findByTripId(tripId);
-    return Promise.all(images.map((img) => this.attachPresignedUrl(img)));
+    // Filter out bill images (stored under trips/{tripId}/bills/ prefix)
+    const tripImages = images.filter((img) => !img.s3Key.includes('/bills/'));
+    return Promise.all(tripImages.map((img) => this.attachPresignedUrl(img)));
   }
 
   async findOne(
@@ -92,6 +94,11 @@ export class ImagesService {
 
     const image = await this.imagesRepository.findById(tripId, imageId);
     if (!image) {
+      throw new NotFoundException(`Image with ID ${imageId} not found`);
+    }
+
+    // Don't allow accessing bill images through images API
+    if (image.s3Key.includes('/bills/')) {
       throw new NotFoundException(`Image with ID ${imageId} not found`);
     }
 
