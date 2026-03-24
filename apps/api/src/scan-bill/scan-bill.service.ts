@@ -42,6 +42,7 @@ export class ScanBillService {
     const uploadUrl = await this.s3Service.generatePresignedUploadUrl(
       s3Key,
       dto.contentType,
+      this.billsBucket,
     );
 
     return {

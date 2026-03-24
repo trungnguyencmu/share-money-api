@@ -36,9 +36,10 @@ export class S3Service {
   async generatePresignedUploadUrl(
     s3Key: string,
     contentType: string,
+    bucket?: string,
   ): Promise<string> {
     const command = new PutObjectCommand({
-      Bucket: this.bucketName,
+      Bucket: bucket || this.bucketName,
       Key: s3Key,
       ContentType: contentType,
     });
@@ -48,9 +49,9 @@ export class S3Service {
     });
   }
 
-  async generatePresignedGetUrl(s3Key: string): Promise<string> {
+  async generatePresignedGetUrl(s3Key: string, bucket?: string): Promise<string> {
     const command = new GetObjectCommand({
-      Bucket: this.bucketName,
+      Bucket: bucket || this.bucketName,
       Key: s3Key,
     });
 
