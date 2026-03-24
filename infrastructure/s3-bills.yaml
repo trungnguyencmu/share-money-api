@@ -1,0 +1,57 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'S3 bucket for Share Money bill images'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - staging
+      - prod
+    Description: Environment name
+
+Resources:
+  BillsBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketName: !Sub 'share-money-bills-${Environment}-${AWS::AccountId}'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      CorsConfiguration:
+        CorsRules:
+          - AllowedOrigins:
+              - '*'
+            AllowedMethods:
+              - PUT
+              - GET
+            AllowedHeaders:
+              - '*'
+            MaxAge: 3600
+      Tags:
+        - Key: Application
+          Value: ShareMoney
+        - Key: Environment
+          Value: !Ref Environment
+
+Outputs:
+  BillsBucketName:
+    Description: Name of the bills S3 bucket
+    Value: !Ref BillsBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-BillsBucketName'
+
+  BillsBucketArn:
+    Description: ARN of the bills S3 bucket
+    Value: !GetAtt BillsBucket.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-BillsBucketArn'

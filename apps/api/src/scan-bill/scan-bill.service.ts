@@ -14,7 +14,7 @@ import { TripsService } from '../trips/trips.service';
 @Injectable()
 export class ScanBillService {
   private readonly textract: TextractClient;
-  private readonly imagesBucket: string;
+  private readonly billsBucket: string;
 
   constructor(
     private readonly billsRepository: BillsRepository,
@@ -25,8 +25,8 @@ export class ScanBillService {
     this.textract = new TextractClient({
       region: this.configService.get<string>('AWS_REGION') || 'ap-southeast-1',
     });
-    this.imagesBucket =
-      this.configService.get<string>('S3_IMAGES_BUCKET') || 'share-money-images-dev';
+    this.billsBucket =
+      this.configService.get<string>('S3_BILLS_BUCKET') || 'share-money-bills-dev';
   }
 
   async requestUploadUrl(
@@ -62,7 +62,7 @@ export class ScanBillService {
     const input: AnalyzeExpenseCommandInput = {
       Document: {
         S3Object: {
-          Bucket: this.imagesBucket,
+          Bucket: this.billsBucket,
           Name: s3Key,
         },
       },

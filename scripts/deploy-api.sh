@@ -48,7 +48,8 @@ aws cloudformation deploy \
     CorsOrigin="*" \
     AdminPassword="ShareMoney2026!Prod" \
     GuestJwtSecret="ShareMoneyGuest2026!SecretKey" \
-    ImagesBucketName="share-money-images-${ENVIRONMENT}-$(aws sts get-caller-identity --query Account --output text)"
+    ImagesBucketName="share-money-images-${ENVIRONMENT}-$(aws sts get-caller-identity --query Account --output text)" \
+    BillsBucketName="share-money-bills-${ENVIRONMENT}-$(aws sts get-caller-identity --query Account --output text)"
 
 # Step 6: Get API URL
 API_URL=$(aws cloudformation describe-stacks \
