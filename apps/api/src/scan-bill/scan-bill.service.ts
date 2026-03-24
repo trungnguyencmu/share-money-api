@@ -106,7 +106,28 @@ export class ScanBillService {
 
   private parseAmount(value?: string): number {
     if (!value) return 0;
+
+    // Handle Vietnamese thousands separator (e.g., "48.000" = 48000)
+    // If last decimal part has exactly 3 digits and those digits are "000",
+    // treat the dots as thousands separators and remove them
     const cleaned = value.replace(/[^0-9.]/g, '');
+
+    // Check if this looks like Vietnamese format: "48.000" or "1.234.567"
+    const parts = cleaned.split('.');
+    if (parts.length > 1) {
+      const lastPart = parts[parts.length - 1];
+      // If last part is exactly 3 digits and all are zeros (e.g., "48.000" -> 48000)
+      // or has thousands separators (e.g., "1.234.567" -> 1234567)
+      if (/^\d{1,3}$/.test(lastPart) && lastPart === '000') {
+        // Vietnamese format with . as thousands separator
+        return parseInt(cleaned.replace(/\./g, ''), 10) || 0;
+      }
+      if (parts.length >= 3 && parts.every((p, i) => i === parts.length - 1 || p.length === 3)) {
+        // Multiple groups of 3 digits separated by dots (e.g., "1.234.567")
+        return parseInt(cleaned.replace(/\./g, ''), 10) || 0;
+      }
+    }
+
     return parseFloat(cleaned) || 0;
   }
 
