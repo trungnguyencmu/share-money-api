@@ -6,8 +6,9 @@ import {
   AnalyzeExpenseCommandOutput,
   TextractClient,
 } from '@aws-sdk/client-textract';
-import { Bill, ScanBillResponseDto, generateTimestamp } from '@share-money/shared';
+import { Bill, BillUploadUrlResponseDto, RequestBillUploadUrlDto, ScanBillResponseDto, generateTimestamp } from '@share-money/shared';
 import { BillsRepository } from '../database/repositories/bills.repository';
+import { S3Service } from '../storage/s3.service';
 import { TripsService } from '../trips/trips.service';
 
 @Injectable()
@@ -18,6 +19,7 @@ export class ScanBillService {
   constructor(
     private readonly billsRepository: BillsRepository,
     private readonly tripsService: TripsService,
+    private readonly s3Service: S3Service,
     private readonly configService: ConfigService,
   ) {
     this.textract = new TextractClient({
@@ -25,6 +27,29 @@ export class ScanBillService {
     });
     this.imagesBucket =
       this.configService.get<string>('S3_IMAGES_BUCKET') || 'share-money-images-dev';
+  }
+
+  async requestUploadUrl(
+    tripId: string,
+    userId: string,
+    dto: RequestBillUploadUrlDto,
+  ): Promise<BillUploadUrlResponseDto> {
+    await this.tripsService.verifyAccess(tripId, userId);
+
+    const billId = `bill-${crypto.randomUUID()}`;
+    const s3Key = `trips/${tripId}/bills/${billId}/${dto.fileName}`;
+
+    const uploadUrl = await this.s3Service.generatePresignedUploadUrl(
+      s3Key,
+      dto.contentType,
+    );
+
+    return {
+      uploadUrl,
+      billId,
+      s3Key,
+      expiresIn: this.s3Service.getUploadUrlExpiry(),
+    };
   }
 
   async scanBill(
