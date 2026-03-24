@@ -202,6 +202,45 @@ Resources:
         - Key: Environment
           Value: !Ref Environment
 
+  # Bills Table
+  BillsTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub 'share-money-bills-${Environment}'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: tripId
+          AttributeType: S
+        - AttributeName: billId
+          AttributeType: S
+        - AttributeName: scannedAt
+          AttributeType: S
+      KeySchema:
+        - AttributeName: tripId
+          KeyType: HASH
+        - AttributeName: billId
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: TripId-ScannedAt-Index
+          KeySchema:
+            - AttributeName: tripId
+              KeyType: HASH
+            - AttributeName: scannedAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      Tags:
+        - Key: Application
+          Value: ShareMoney
+        - Key: Environment
+          Value: !Ref Environment
+
 Outputs:
   TripsTableName:
     Description: Name of the Trips table
@@ -262,3 +301,15 @@ Outputs:
     Value: !GetAtt ImagesTable.Arn
     Export:
       Name: !Sub '${AWS::StackName}-ImagesTableArn'
+
+  BillsTableName:
+    Description: Name of the Bills table
+    Value: !Ref BillsTable
+    Export:
+      Name: !Sub '${AWS::StackName}-BillsTable'
+
+  BillsTableArn:
+    Description: ARN of the Bills table
+    Value: !GetAtt BillsTable.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-BillsTableArn'

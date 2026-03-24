@@ -8,6 +8,7 @@ import { DatabaseModule } from '../database/database.module';
 import { ExpensesModule } from '../expenses/expenses.module';
 import { ImagesModule } from '../images/images.module';
 import { MembersModule } from '../members/members.module';
+import { ScanBillModule } from '../scan-bill/scan-bill.module';
 import { SettlementModule } from '../settlement/settlement.module';
 import { TripsModule } from '../trips/trips.module';
 import { AppController } from './app.controller';
@@ -26,6 +27,7 @@ import { AppService } from './app.service';
     ImagesModule,
     MembersModule,
     SettlementModule,
+    ScanBillModule,
   ],
   controllers: [AppController],
   providers: [
