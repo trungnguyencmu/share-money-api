@@ -7,12 +7,14 @@ import {
 import { generateTimestamp } from '@share-money/shared';
 import { CognitoUserLookupService } from '../auth/cognito-user-lookup.service';
 import { TripMembersRepository } from '../database/repositories/trip-members.repository';
+import { TripsRepository } from '../database/repositories/trips.repository';
 import { TripsService } from '../trips/trips.service';
 
 @Injectable()
 export class MembersService {
   constructor(
     private readonly tripMembersRepository: TripMembersRepository,
+    private readonly tripsRepository: TripsRepository,
     private readonly tripsService: TripsService,
     private readonly cognitoLookup: CognitoUserLookupService,
   ) {}
@@ -45,7 +47,10 @@ export class MembersService {
       isSettled: false,
     };
 
-    return this.tripMembersRepository.create(member);
+    await this.tripMembersRepository.create(member);
+    await this.tripsRepository.incrementMemberCount(tripId, 1);
+
+    return member;
   }
 
   async getMembers(tripId: string, userId: string) {
@@ -89,6 +94,7 @@ export class MembersService {
     }
 
     await this.tripMembersRepository.delete(tripId, targetUserId);
+    await this.tripsRepository.incrementMemberCount(tripId, -1);
   }
 
   async markAsSettled(

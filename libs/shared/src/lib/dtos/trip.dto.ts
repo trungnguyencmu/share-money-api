@@ -147,4 +147,10 @@ export class TripResponseDto {
     example: '2025-03-15',
   })
   endDate?: string;
+
+  @ApiProperty({
+    description: 'Number of members in the trip',
+    example: 4,
+  })
+  memberCount: number;
 }

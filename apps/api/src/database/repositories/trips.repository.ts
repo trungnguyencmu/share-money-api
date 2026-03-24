@@ -146,4 +146,19 @@ export class TripsRepository {
       Key: { tripId },
     });
   }
+
+  /**
+   * Atomically increment/decrement member count
+   */
+  async incrementMemberCount(tripId: string, delta: number): Promise<void> {
+    await this.dynamodbService.update({
+      TableName: this.tableName,
+      Key: { tripId },
+      UpdateExpression: 'SET memberCount = if_not_exists(memberCount, :zero) + :delta',
+      ExpressionAttributeValues: {
+        ':delta': delta,
+        ':zero': 0,
+      },
+    });
+  }
 }

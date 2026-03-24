@@ -28,6 +28,7 @@ export class TripsService {
       isActive: true,
       status: 'active',
       inviteCode: generateInviteCode(),
+      memberCount: 1,
       ...(createTripDto.imageS3Key && { imageS3Key: createTripDto.imageS3Key }),
       ...(createTripDto.startDate && { startDate: createTripDto.startDate }),
       ...(createTripDto.endDate && { endDate: createTripDto.endDate }),
@@ -46,7 +47,7 @@ export class TripsService {
       isSettled: false,
     });
 
-    return this.attachImageUrl(trip);
+    return this.buildTripResponse(trip);
   }
 
   async findAll(userId: string) {
@@ -65,12 +66,12 @@ export class TripsService {
     const activeAdditional = additionalTrips.filter((t) => t.isActive);
 
     const allTrips = [...ownedTrips, ...activeAdditional];
-    return Promise.all(allTrips.map((t) => this.attachImageUrl(t)));
+    return Promise.all(allTrips.map((t) => this.buildTripResponse(t)));
   }
 
   async findOne(tripId: string, userId: string) {
     const trip = await this.verifyAccess(tripId, userId);
-    return this.attachImageUrl(trip);
+    return this.buildTripResponse(trip);
   }
 
   async update(tripId: string, userId: string, updateTripDto: UpdateTripDto) {
@@ -82,7 +83,7 @@ export class TripsService {
     }
 
     const updated = await this.tripsRepository.update(tripId, updateTripDto);
-    return this.attachImageUrl(updated);
+    return this.buildTripResponse(updated);
   }
 
   async remove(tripId: string, userId: string) {
@@ -121,7 +122,7 @@ export class TripsService {
   async regenerateInviteCode(tripId: string, userId: string) {
     await this.getActiveOwnedTrip(tripId, userId);
     const updated = await this.tripsRepository.update(tripId, { inviteCode: generateInviteCode() });
-    return this.attachImageUrl(updated);
+    return this.buildTripResponse(updated);
   }
 
   /** Check if user is the trip owner. Returns trip. */
@@ -137,9 +138,15 @@ export class TripsService {
     return trip;
   }
 
-  private async attachImageUrl(trip: Trip): Promise<Trip & { imageUrl?: string }> {
-    if (!trip.imageS3Key) return trip;
-    const imageUrl = await this.s3Service.generatePresignedGetUrl(trip.imageS3Key);
-    return { ...trip, imageUrl };
+  private async buildTripResponse(trip: Trip) {
+    const imageUrl = trip.imageS3Key
+      ? await this.s3Service.generatePresignedGetUrl(trip.imageS3Key)
+      : undefined;
+
+    return {
+      ...trip,
+      memberCount: trip.memberCount ?? 0,
+      imageUrl,
+    };
   }
 }

@@ -9,4 +9,5 @@ export interface Trip {
   status: 'active' | 'upcoming' | 'settled';
   startDate?: string;
   endDate?: string;
+  memberCount?: number;
 }
