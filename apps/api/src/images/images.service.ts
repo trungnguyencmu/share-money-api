@@ -80,8 +80,10 @@ export class ImagesService {
     await this.tripsService.verifyAccess(tripId, userId);
 
     const images = await this.imagesRepository.findByTripId(tripId);
-    // Filter out bill images (stored under trips/{tripId}/bills/ prefix)
-    const tripImages = images.filter((img) => !img.s3Key.includes('/bills/'));
+    // Filter out bill images (stored under trips/{tripId}/bills/ prefix or fileName contains "bill")
+    const tripImages = images.filter(
+      (img) => !img.s3Key.includes('/bills/') && !img.fileName.toLowerCase().includes('bill'),
+    );
     return Promise.all(tripImages.map((img) => this.attachPresignedUrl(img)));
   }
 
@@ -98,7 +100,7 @@ export class ImagesService {
     }
 
     // Don't allow accessing bill images through images API
-    if (image.s3Key.includes('/bills/')) {
+    if (image.s3Key.includes('/bills/') || image.fileName.toLowerCase().includes('bill')) {
       throw new NotFoundException(`Image with ID ${imageId} not found`);
     }
 
