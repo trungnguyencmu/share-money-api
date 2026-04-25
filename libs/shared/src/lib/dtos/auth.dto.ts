@@ -1,12 +1,15 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsEmail,
+  IsInt,
   IsNotEmpty,
   IsOptional,
   IsString,
   MinLength,
   MaxLength,
+  Min,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 
 // --- Request DTOs ---
 
@@ -52,11 +55,13 @@ export class ConfirmRegistrationDto {
 
   @ApiProperty({
     description: 'Verification code sent to email',
-    example: '123456',
+    example: 123456,
+    type: 'integer',
   })
-  @IsString()
-  @IsNotEmpty()
-  confirmationCode: string;
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  confirmationCode: number;
 }
 
 export class LoginDto {
@@ -115,11 +120,13 @@ export class ResetPasswordDto {
 
   @ApiProperty({
     description: 'Reset code sent to email',
-    example: '123456',
+    example: 123456,
+    type: 'integer',
   })
-  @IsString()
-  @IsNotEmpty()
-  confirmationCode: string;
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  code: number;
 
   @ApiProperty({
     description: 'New password (min 6 characters)',

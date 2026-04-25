@@ -67,7 +67,7 @@ export class AuthService {
         new ConfirmSignUpCommand({
           ClientId: this.clientId,
           Username: dto.email,
-          ConfirmationCode: dto.confirmationCode,
+          ConfirmationCode: String(dto.confirmationCode),
         }),
       );
       return { message: 'Email confirmed successfully. You can now log in.' };
@@ -172,7 +172,7 @@ export class AuthService {
         new ConfirmForgotPasswordCommand({
           ClientId: this.clientId,
           Username: dto.email,
-          ConfirmationCode: dto.confirmationCode,
+          ConfirmationCode: String(dto.code),
           Password: dto.newPassword,
         }),
       );

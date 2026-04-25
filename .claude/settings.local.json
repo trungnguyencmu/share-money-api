@@ -26,7 +26,13 @@
       "Bash(git:*)",
       "Bash(chmod:*)",
       "Bash(bash scripts/deploy-api.sh dev 2>&1)",
-      "Bash(aws logs:*)"
+      "Bash(aws logs:*)",
+      "Bash(grep -E \"\\\\.\\(ts|tsx\\)$\")",
+      "Bash(aws lambda:*)",
+      "Bash(aws s3api:*)",
+      "Bash(npm test:*)",
+      "Bash(bash scripts/deploy-api.sh dev)",
+      "Bash(aws s3:*)"
     ],
     "deny": [],
     "ask": []
