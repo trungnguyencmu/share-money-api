@@ -29,7 +29,7 @@ export class ExpensesService {
     private readonly tripMembersRepository: TripMembersRepository,
     private readonly tripsService: TripsService,
     private readonly s3Service: S3Service,
-    private readonly configService: ConfigService,
+    private readonly configService: ConfigService
   ) {
     const password = this.configService.get<string>('ADMIN_PASSWORD');
     if (!password || password === 'ok' || password === 'CHANGE_ME_strong_password') {
@@ -37,7 +37,7 @@ export class ExpensesService {
       if (nodeEnv === 'production') {
         throw new Error(
           'ADMIN_PASSWORD must be set to a strong value in production. ' +
-          'Do not use default or placeholder values.',
+            'Do not use default or placeholder values.'
         );
       }
     }
@@ -46,7 +46,7 @@ export class ExpensesService {
 
   async create(tripId: string, userId: string, createExpenseDto: CreateExpenseDto) {
     await this.tripsService.verifyAccess(tripId, userId);
-    await this.validatePayer(tripId, createExpenseDto.payer);
+    const payerMember = await this.resolvePayer(tripId, createExpenseDto.payerUserId);
 
     let amount = createExpenseDto.amount;
     let date = createExpenseDto.date;
@@ -72,7 +72,8 @@ export class ExpensesService {
     const expense = {
       tripId,
       expenseId: generateExpenseId(),
-      payer: createExpenseDto.payer,
+      payerUserId: payerMember.userId,
+      payer: payerMember.displayName,
       title: createExpenseDto.title,
       amount,
       date,
@@ -85,8 +86,16 @@ export class ExpensesService {
 
   async findAll(tripId: string, userId: string) {
     await this.tripsService.verifyAccess(tripId, userId);
-    const expenses = await this.expensesRepository.findByTripId(tripId);
-    return Promise.all(expenses.map((e) => this.attachBillImageUrl(tripId, e)));
+    const [expenses, members] = await Promise.all([
+      this.expensesRepository.findByTripId(tripId),
+      this.tripMembersRepository.findByTripId(tripId),
+    ]);
+    const nameByUserId = new Map(members.map((m) => [m.userId, m.displayName]));
+    return Promise.all(
+      expenses.map((e) =>
+        this.attachBillImageUrl(tripId, this.withCurrentPayerName(e, nameByUserId))
+      )
+    );
   }
 
   async findOne(tripId: string, expenseId: string, userId: string) {
@@ -97,14 +106,19 @@ export class ExpensesService {
       throw new NotFoundException(`Expense with ID ${expenseId} not found`);
     }
 
-    return this.attachBillImageUrl(tripId, expense);
+    const member = expense.payerUserId
+      ? await this.tripMembersRepository.findByTripAndUser(tripId, expense.payerUserId)
+      : null;
+    const resolved = member ? { ...expense, payer: member.displayName } : expense;
+
+    return this.attachBillImageUrl(tripId, resolved);
   }
 
   async update(
     tripId: string,
     expenseId: string,
     userId: string,
-    updateExpenseDto: UpdateExpenseDto,
+    updateExpenseDto: UpdateExpenseDto
   ) {
     await this.tripsService.verifyAccess(tripId, userId);
 
@@ -113,11 +127,14 @@ export class ExpensesService {
       throw new NotFoundException(`Expense with ID ${expenseId} not found`);
     }
 
-    if (updateExpenseDto.payer) {
-      await this.validatePayer(tripId, updateExpenseDto.payer);
+    const updates: Partial<Expense> = { ...updateExpenseDto };
+    if (updateExpenseDto.payerUserId) {
+      const payerMember = await this.resolvePayer(tripId, updateExpenseDto.payerUserId);
+      updates.payerUserId = payerMember.userId;
+      updates.payer = payerMember.displayName;
     }
 
-    return this.expensesRepository.update(tripId, expenseId, updateExpenseDto);
+    return this.expensesRepository.update(tripId, expenseId, updates);
   }
 
   async remove(tripId: string, expenseId: string, userId: string) {
@@ -141,18 +158,20 @@ export class ExpensesService {
     await this.expensesRepository.deleteAllByTripId(tripId);
   }
 
-  private async validatePayer(tripId: string, payer: string): Promise<void> {
-    const names = await this.tripMembersRepository.getMemberDisplayNames(tripId);
-    const match = names.some(
-      (name) => name.toLowerCase() === payer.trim().toLowerCase(),
-    );
-
-    if (!match) {
-      throw new BadRequestException(
-        `Payer "${payer}" is not a member of this trip. ` +
-        `Members: ${names.join(', ') || '(none)'}`,
-      );
+  private async resolvePayer(tripId: string, payerUserId: string) {
+    const member = await this.tripMembersRepository.findByTripAndUser(tripId, payerUserId);
+    if (!member) {
+      throw new BadRequestException(`Payer userId "${payerUserId}" is not a member of this trip.`);
     }
+    return member;
+  }
+
+  private withCurrentPayerName(expense: Expense, nameByUserId: Map<string, string>): Expense {
+    const currentName = nameByUserId.get(expense.payerUserId);
+    if (!currentName || currentName === expense.payer) {
+      return expense;
+    }
+    return { ...expense, payer: currentName };
   }
 
   private verifyPassword(input: string): boolean {
@@ -164,7 +183,10 @@ export class ExpensesService {
     return timingSafeEqual(expected, actual);
   }
 
-  private async attachBillImageUrl(tripId: string, expense: Expense): Promise<Expense & { billImageUrl?: string }> {
+  private async attachBillImageUrl(
+    tripId: string,
+    expense: Expense
+  ): Promise<Expense & { billImageUrl?: string }> {
     if (!expense.billId) {
       return expense;
     }

@@ -13,14 +13,14 @@ export class SettlementService {
   constructor(
     private readonly expensesRepository: ExpensesRepository,
     private readonly tripMembersRepository: TripMembersRepository,
-    private readonly tripsService: TripsService,
+    private readonly tripsService: TripsService
   ) {}
 
   async calculateSettlement(
     tripId: string,
     userId: string,
     startDate?: string,
-    endDate?: string,
+    endDate?: string
   ): Promise<SettlementResponseDto> {
     const trip = await this.tripsService.verifyAccess(tripId, userId);
 
@@ -28,12 +28,25 @@ export class SettlementService {
     const effectiveEndDate = endDate || trip.endDate;
 
     const [expenses, members] = await Promise.all([
-      this.expensesRepository.findByTripIdAndDateRange(tripId, effectiveStartDate, effectiveEndDate),
+      this.expensesRepository.findByTripIdAndDateRange(
+        tripId,
+        effectiveStartDate,
+        effectiveEndDate
+      ),
       this.tripMembersRepository.findByTripId(tripId),
     ]);
 
     const memberNames = members.map((m) => m.displayName).sort();
-    const balances = calculateBalances(expenses, memberNames);
+
+    // Re-map each expense's payer to the CURRENT display name via payerUserId so
+    // renames don't cause expenses to attribute to a stale name.
+    const nameByUserId = new Map(members.map((m) => [m.userId, m.displayName]));
+    const expensesWithCurrentPayer = expenses.map((e) => ({
+      ...e,
+      payer: nameByUserId.get(e.payerUserId) ?? e.payer,
+    }));
+
+    const balances = calculateBalances(expensesWithCurrentPayer, memberNames);
 
     // Merge isSettled status into balances
     const balancesWithSettled = balances.map((balance) => {

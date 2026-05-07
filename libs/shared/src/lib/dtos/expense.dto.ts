@@ -11,14 +11,14 @@ import {
 
 export class CreateExpenseDto {
   @ApiProperty({
-    description: 'Name of the person who paid',
-    example: 'John Doe',
-    maxLength: 50,
+    description: 'User ID (Cognito sub) of the trip member who paid',
+    example: 'a1b2c3d4-5678-90ab-cdef-1234567890ab',
+    maxLength: 100,
   })
   @IsString()
   @IsNotEmpty()
-  @MaxLength(50)
-  payer: string;
+  @MaxLength(100)
+  payerUserId: string;
 
   @ApiProperty({
     description: 'Description of the expense',
@@ -59,14 +59,14 @@ export class CreateExpenseDto {
 
 export class UpdateExpenseDto {
   @ApiPropertyOptional({
-    description: 'Name of the person who paid',
-    example: 'John Doe',
-    maxLength: 50,
+    description: 'User ID (Cognito sub) of the trip member who paid',
+    example: 'a1b2c3d4-5678-90ab-cdef-1234567890ab',
+    maxLength: 100,
   })
   @IsString()
   @IsOptional()
-  @MaxLength(50)
-  payer?: string;
+  @MaxLength(100)
+  payerUserId?: string;
 
   @ApiPropertyOptional({
     description: 'Description of the expense',
@@ -111,7 +111,13 @@ export class ExpenseResponseDto {
   expenseId: string;
 
   @ApiProperty({
-    description: 'Name of the person who paid',
+    description: 'User ID (Cognito sub) of the member who paid',
+    example: 'a1b2c3d4-5678-90ab-cdef-1234567890ab',
+  })
+  payerUserId: string;
+
+  @ApiProperty({
+    description: 'Current display name of the payer (resolved from member record)',
     example: 'John Doe',
   })
   payer: string;
